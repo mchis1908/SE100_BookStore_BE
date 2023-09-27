@@ -1,6 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { Request, Response, NextFunction } from "express"
-import User from "../models/User"
+import { User } from "../models"
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.header("Authorization")

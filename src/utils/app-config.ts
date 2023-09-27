@@ -1,10 +1,8 @@
-import dotenv from "dotenv"
 import cors from "cors"
 import morgan from "morgan"
 
 function config(express: any) {
     const app = express()
-    dotenv.config()
     app.use(
         cors({
             origin: "*",

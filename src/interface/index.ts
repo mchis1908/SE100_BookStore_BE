@@ -2,8 +2,8 @@ import IAdmin from "./common/IAdmin"
 import ICustomer from "./common/ICustomer"
 import IEmployee from "./common/IEmployee"
 import IUser from "./common/IUser"
+import ICredential from "./common/ICredential"
 import SCHEMA_NAME from "./common/schema-name"
-import IBookStore from "./book-store/IBookStore"
 import IFloor from "./book-store/IFloor"
 import IRow from "./book-store/IRow"
 import IBook from "./book/IBook"
@@ -20,14 +20,16 @@ import IPreOrderBook from "./pre-order/IPreOrderBook"
 import IPreOrderBookDetail from "./pre-order/IPreOrderBookDetail"
 import IProblemReport from "./report/IProblemReport"
 import { EUserRole } from "./common/IUser"
+import IMembershipCard from "./discount/IMembershipCard"
+import { ERank } from "./discount/IMembershipCard"
 
 export {
     IAdmin,
     ICustomer,
     IEmployee,
     IUser,
+    ICredential,
     SCHEMA_NAME,
-    IBookStore,
     IFloor,
     IRow,
     IBook,
@@ -43,5 +45,7 @@ export {
     IPreOrderBook,
     IPreOrderBookDetail,
     IProblemReport,
-    EUserRole
+    EUserRole,
+    IMembershipCard,
+    ERank
 }

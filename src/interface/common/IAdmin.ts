@@ -1,1 +1,3 @@
-export default interface IAdmin {}
+export default interface IAdmin {
+    getNames: () => string
+}

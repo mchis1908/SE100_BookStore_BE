@@ -6,7 +6,7 @@ const mustHaveFields =
         const body = req.body
         const leftFields = []
         for (const field of fields) {
-            if (!body[field]) {
+            if (body[field] === undefined || body[field] === null) {
                 leftFields.push(field)
             }
         }

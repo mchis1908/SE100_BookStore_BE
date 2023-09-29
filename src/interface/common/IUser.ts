@@ -16,7 +16,7 @@ interface IUser<T = IAdmin | IEmployee | ICustomer> {
     phoneNumber: string
     email: string
     address: string
-    password?: string
+    password: string
     user: Types.ObjectId | T
     refPath: string // this is the path to the user's document in the database
 }

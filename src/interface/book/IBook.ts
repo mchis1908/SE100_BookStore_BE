@@ -3,6 +3,7 @@ import internal from "stream"
 import IBookCategory from "./IBookCategory"
 
 export default interface IBook {
+    name: string
     author: string
     barcode: string
     publishingYear: number
@@ -12,4 +13,5 @@ export default interface IBook {
     importDate: Date
     importPrice: number
     salesPrice: number
+    translator: string
 }

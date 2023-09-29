@@ -9,11 +9,6 @@ const UserShema = new Schema<IUser>(
             match: [/^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+$/, "Please fill a valid email address."],
             unique: true
         },
-        password: {
-            type: String,
-            minlength: [6, "Password must be at least 6 characters."],
-            maxlength: [20, "Password must be at most 20 characters."]
-        },
         address: {
             type: String,
             minlength: [6, "Address must be at least 6 characters."],
@@ -42,8 +37,8 @@ const UserShema = new Schema<IUser>(
         },
         user: {
             type: Schema.Types.ObjectId,
-            required: true,
-            refPath: "refPath"
+            refPath: "refPath",
+            default: null
         },
         refPath: {
             type: String,
@@ -52,7 +47,8 @@ const UserShema = new Schema<IUser>(
         }
     },
     {
-        timestamps: true
+        timestamps: true,
+        versionKey: false
     }
 )
 

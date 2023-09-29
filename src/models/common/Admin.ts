@@ -5,7 +5,8 @@ import IAdmin from "../../interface/common/IAdmin"
 const AdminSchema = new Schema<IAdmin>(
     {},
     {
-        timestamps: true
+        timestamps: true,
+        versionKey: false
     }
 )
 

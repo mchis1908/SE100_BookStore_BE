@@ -4,6 +4,5 @@ import IInvoice from "./IInvoice"
 
 export default interface IInvoiceDetail {
     book: Types.ObjectId | IBook
-    invoice: Types.ObjectId | IInvoice
     quantity: number
 }

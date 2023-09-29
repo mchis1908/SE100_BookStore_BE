@@ -2,7 +2,6 @@ import Admin from "./common/Admin"
 import Customer from "./common/Customer"
 import Employee from "./common/Employee"
 import User from "./common/User"
-import BookStore from "./book-store/BookStore"
 import Floor from "./book-store/Floor"
 import Row from "./book-store/Row"
 import Book from "./book/Book"
@@ -18,13 +17,13 @@ import ExpenseType from "./expense/ExpenseType"
 import PreOrderBook from "./pre-order/PreOrderBook"
 import PreOrderBookDetail from "./pre-order/PreOrderBookDetails"
 import ProblemReport from "./report/ProblemReport"
+import MembershipCard from "./discount/MembershipCard"
 
 export {
     Admin,
     Customer,
     Employee,
     User,
-    BookStore,
     Floor,
     Row,
     Book,
@@ -39,5 +38,6 @@ export {
     ExpenseType,
     PreOrderBook,
     PreOrderBookDetail,
-    ProblemReport
+    ProblemReport,
+    MembershipCard
 }

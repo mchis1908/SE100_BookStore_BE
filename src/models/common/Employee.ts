@@ -10,8 +10,8 @@ const EmployeeSchema = new Schema<IEmployee>(
         },
         startDateOfWork: {
             type: Date,
-            required: [true, "Start date of work is required"],
-            min: [Date.now(), "Start date of work must be greater than or equal to today"]
+            min: [Date.now(), "Start date of work must be greater than or equal to today"],
+            default: Date.now()
         },
         salaryCoefficient: {
             type: Number,
@@ -25,12 +25,12 @@ const EmployeeSchema = new Schema<IEmployee>(
         },
         seniority: {
             type: Number,
-            required: [true, "Seniority is required"],
             min: [0, "Seniority must be greater than or equal to 0"]
         }
     },
     {
-        timestamps: true
+        timestamps: true,
+        versionKey: false
     }
 )
 

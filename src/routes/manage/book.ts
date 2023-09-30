@@ -7,6 +7,7 @@ import { MAX_BOOK_QUANTITY } from "../../utils/common"
 import verifyRole from "../../middleware/verifyRole"
 import { EINVOICE_TYPE, IImportInvoice } from "../../interface/book/IInvoice"
 import { Types } from "mongoose"
+import ImportInvoice from "../../models/book/ImportInvoice"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -122,7 +123,7 @@ router.post(
 // IMPORT BOOK
 router.post(
     "/import",
-    verifyRole(["admin"]),
+    verifyRole(["admin", "employee"]),
     mustHaveFields("books", "supplier"),
     async (req: Request, res: Response) => {
         try {
@@ -167,13 +168,15 @@ router.post(
             const invoiceDetails = await Promise.all(invoiceDetailsPromise)
             const newInvoiceDetails = await InvoiceDetail.insertMany(invoiceDetails)
 
+            const importInvoice = await ImportInvoice.create({
+                supplier,
+                importDate: new Date()
+            })
+
             const invoice = await Invoice.create({
-                employee: req.user_id,
+                employee: new toId(req.user_id),
                 invoiceDetails: newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id),
-                invoice: {
-                    importDate: new Date(),
-                    supplier
-                } as IImportInvoice,
+                invoice: importInvoice._id,
                 note,
                 total,
                 refPath: SCHEMA_NAME.IMPORT_INVOICES,
@@ -190,7 +193,7 @@ router.post(
 // PREORDER BOOK
 router.post(
     "/pre-order",
-    verifyRole(["admin", "customer"]),
+    verifyRole(["admin", "employee"]),
     mustHaveFields<IPreOrderBook>("customer", "deposit", "expirationDate", "preOrderBookDetails"),
     async (req: Request, res: Response) => {
         try {

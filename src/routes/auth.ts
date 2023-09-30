@@ -11,44 +11,18 @@ const router = express.Router()
 
 router.post(
     "/signup",
-    doNotAllowFields<IUser>("refPath", "user"),
-    mustHaveFields<IUser>("email", "phoneNumber", "name", "password", "role"),
+    doNotAllowFields<IUser>("refPath", "user", "role"),
+    mustHaveFields<IUser>("email", "phoneNumber", "name", "password"),
     async (req: Request, res: Response) => {
-        const { email, password, role } = req.body as IUser
+        const { email, password, phoneNumber } = req.body as IUser
         try {
-            const user = await User.findOne({ email })
+            const user = await User.findOne({ $or: [{ email }, { phoneNumber }] })
             if (user) return res.status(400).json({ success: false, message: "User already exists" })
-
-            let roleUser
-            let roleUserId
-            switch (role) {
-                case EUserRole.CUSTOMER:
-                    roleUser = await Customer.create({})
-                    roleUserId = roleUser._id
-                    break
-                case EUserRole.EMPLOYEE:
-                    roleUser = await Employee.create({})
-                    roleUserId = roleUser._id
-                    break
-                case EUserRole.ADMIN:
-                    roleUser = await Admin.create({})
-                    roleUserId = roleUser._id
-                    break
-                default:
-                    break
-            }
-
-            if (!roleUser) return res.status(400).json({ success: false, message: "Role user does not exist" })
 
             const newUser = new User({
                 ...req.body,
-                refPath:
-                    role === EUserRole.CUSTOMER
-                        ? SCHEMA_NAME.CUSTOMERS
-                        : role === EUserRole.ADMIN
-                        ? SCHEMA_NAME.ADMINS
-                        : SCHEMA_NAME.EMPLOYEES,
-                user: roleUserId
+                refPath: SCHEMA_NAME.ADMINS,
+                role: EUserRole.ADMIN
             })
 
             await newUser.save()
@@ -65,7 +39,7 @@ router.post(
             })
             res.json({
                 success: true,
-                message: "User created",
+                message: "Admin created",
                 accessToken,
                 data: newUser
             })

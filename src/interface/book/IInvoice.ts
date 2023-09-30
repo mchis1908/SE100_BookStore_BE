@@ -9,7 +9,6 @@ export enum EINVOICE_TYPE {
     IMPORT = SCHEMA_NAME.IMPORT_INVOICES
 }
 export interface IUserInvoice {
-    customer: string | Types.ObjectId | IUser
     eventDiscountValue: number
     vouchers: Types.ObjectId[] | IVoucher[]
 }
@@ -27,4 +26,5 @@ export default interface IInvoice<T = IUserInvoice | IImportInvoice> {
     refPath: string
     invoice: Types.ObjectId | T
     type: EINVOICE_TYPE
+    customer: string | Types.ObjectId | IUser
 }

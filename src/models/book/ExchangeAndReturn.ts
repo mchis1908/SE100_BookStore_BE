@@ -12,7 +12,7 @@ const ExchangeAndReturnSchema = new Schema<IExchangeAndReturn>(
         },
         employee: {
             type: Schema.Types.ObjectId,
-            ref: SCHEMA_NAME.EMPLOYEES
+            ref: SCHEMA_NAME.USERS
         },
         quantity: {
             type: Number

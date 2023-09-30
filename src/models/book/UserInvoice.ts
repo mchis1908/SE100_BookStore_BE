@@ -3,10 +3,6 @@ import { IUserInvoice } from "../../interface/book/IInvoice"
 import { SCHEMA_NAME } from "../../interface"
 
 const UserInvoice = new Schema<IUserInvoice>({
-    customer: {
-        type: Schema.Types.ObjectId,
-        ref: SCHEMA_NAME.USERS
-    },
     eventDiscountValue: {
         type: Number
     },

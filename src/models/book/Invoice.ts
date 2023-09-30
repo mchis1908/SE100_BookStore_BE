@@ -3,9 +3,13 @@ import { IInvoice, SCHEMA_NAME } from "../../interface"
 
 const InvoiceSchema = new Schema<IInvoice>(
     {
+        customer: {
+            type: Schema.Types.ObjectId,
+            ref: SCHEMA_NAME.USERS
+        },
         employee: {
             type: Schema.Types.ObjectId,
-            ref: SCHEMA_NAME.EMPLOYEES
+            ref: SCHEMA_NAME.USERS
         },
         invoiceDetails: [
             {

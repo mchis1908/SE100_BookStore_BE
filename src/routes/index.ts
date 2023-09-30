@@ -2,12 +2,16 @@ import { Express } from "express"
 import authRouter from "./auth"
 import rootRouter from "./root"
 import userRouter from "./user"
-import manageEmployeeRouter from "./manage/employee"
-import manageCustomerRouter from "./manage/customer"
-import manageBookstoreRouter from "./manage/bookstore"
-import manageBookRouter from "./manage/book"
-import manageOrderRouter from "./manage/order"
-import manageVoucherRouter from "./manage/voucher"
+
+import {
+    manageBookRouter,
+    manageBookstoreRouter,
+    manageCustomerRouter,
+    manageEmployeeRouter,
+    manageOrderRouter,
+    manageVoucherRouter
+} from "./manage"
+import { clientBookRouter, invoiceRouter } from "./client"
 
 export default function getRoutes(app: Express) {
     app.use("/api", rootRouter)
@@ -19,4 +23,7 @@ export default function getRoutes(app: Express) {
     app.use("/api/manage/book", manageBookRouter)
     app.use("/api/manage/order", manageOrderRouter)
     app.use("/api/manage/voucher", manageVoucherRouter)
+
+    app.use("/api/book", clientBookRouter)
+    app.use("/api/invoice", invoiceRouter)
 }

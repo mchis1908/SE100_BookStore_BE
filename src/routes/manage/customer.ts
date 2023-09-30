@@ -37,7 +37,7 @@ router.post(
             await newUser.save()
 
             const membershipCard = await MembershipCard.create({
-                customer: newCustomer._id
+                customer: newUser._id
             })
 
             const bcryptPassword = await bcrypt.hash(password, 10)

@@ -6,8 +6,11 @@ import { Book, Invoice, MembershipCard, User } from "../../models"
 import InvoiceDetails from "../../models/book/InvoiceDetails"
 import { POINT_RANKING, RANK } from "../../utils/common"
 import { EINVOICE_TYPE, IUserInvoice } from "../../interface/book/IInvoice"
+import { Types } from "mongoose"
+import UserInvoice from "../../models/book/UserInvoice"
 
 const router = Router()
+const toId = Types.ObjectId
 
 // router.post(
 //     "/create-order-item",
@@ -38,38 +41,16 @@ const router = Router()
 
 router.post(
     "/create-order",
-    mustHaveFields<IInvoice>("invoiceDetails", "employee"),
-    mustHaveFields<IUserInvoice>("customer"),
-    verifyRole(["admin", "customer"]),
+    mustHaveFields<IInvoice>("invoiceDetails", "customer"),
+    verifyRole(["admin", "employee"]),
     async (req: Request, res: Response) => {
         try {
-            const { invoiceDetails, customer, employee, total, vouchers, eventDiscountValue } = req.body
+            const { invoiceDetails, customer, total, vouchers, eventDiscountValue } = req.body
 
             const _customer = await User.findById(customer)
             if (!_customer) {
                 return res.status(400).json({ success: false, message: `Customer ${customer} does not exist` })
             }
-
-            const _employee = await User.findById(employee)
-
-            if (!_employee) {
-                return res.status(400).json({ success: false, message: `Employee ${employee} does not exist` })
-            }
-
-            const newInvoiceDetails = await InvoiceDetails.insertMany(invoiceDetails)
-
-            const newInvoice = await Invoice.create({
-                employee,
-                invoiceDetails: newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id),
-                total,
-                invoice: {
-                    customer,
-                    vouchers,
-                    eventDiscountValue
-                } as IUserInvoice,
-                type: EINVOICE_TYPE.USER,
-                refPath: EINVOICE_TYPE.USER
-            })
 
             const point = total / POINT_RANKING
 
@@ -100,7 +81,24 @@ router.post(
             membershipCard.lastTransaction = new Date()
             await membershipCard.save()
 
-            res.status(201).json({ success: true, message: "Order created successfully" })
+            const newInvoiceDetails = await InvoiceDetails.insertMany(invoiceDetails)
+
+            const userInvoice = await UserInvoice.create({
+                eventDiscountValue,
+                vouchers
+            })
+
+            const newInvoice = await Invoice.create({
+                employee: new toId(req.user_id),
+                invoiceDetails: newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id),
+                total,
+                invoice: userInvoice._id,
+                type: EINVOICE_TYPE.USER,
+                refPath: EINVOICE_TYPE.USER,
+                customer: _customer._id
+            })
+
+            res.status(201).json({ success: true, message: "Order created successfully", data: newInvoice })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
         }

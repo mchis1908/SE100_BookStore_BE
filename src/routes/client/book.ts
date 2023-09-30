@@ -15,12 +15,13 @@ router.get("/", async (req: Request, res: Response) => {
 
 router.get("/search", async (req: Request, res: Response) => {
     try {
-        const { q, filter, from, to } = req.query
+        const { keyword, filter, from, to } = req.query
         const queries = ["category", "author", "name", "salesPrice"]
         if (!filter) return res.status(400).json({ success: false, message: "Missing filter" })
         if (!queries.includes(filter.toString()))
             return res.status(400).json({ success: false, message: "Invalid filter" })
-        if (filter !== "salesPrice" && !q) return res.status(400).json({ success: false, message: "Missing q" })
+        if (filter !== "salesPrice" && !keyword)
+            return res.status(400).json({ success: false, message: "Missing keyword" })
         if (filter === "salesPrice" && (!from || !to))
             return res.status(400).json({ success: false, message: "Missing from or to" })
         let books = [] as IBook[]
@@ -28,7 +29,7 @@ router.get("/search", async (req: Request, res: Response) => {
             // FILTER BY category
             books = await Book.find({
                 categories: {
-                    $in: await BookCategory.find({ name: { $regex: q as string, $options: "i" } }).select("_id")
+                    $in: await BookCategory.find({ name: { $regex: keyword as string, $options: "i" } }).select("_id")
                 }
             }).populate("categories", "name")
         } else {
@@ -42,7 +43,7 @@ router.get("/search", async (req: Request, res: Response) => {
                           }
                       }
                     : {
-                          [filter.toString()]: { $regex: q as string, $options: "i" }
+                          [filter.toString()]: { $regex: keyword as string, $options: "i" }
                       }
             ).populate("categories", "name")
         }

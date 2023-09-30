@@ -62,7 +62,7 @@ router.put("/edit-category", doNotAllowFields<IBookCategory>("popularity"), asyn
 
 // CREATE BOOK
 router.post(
-    "/create-book",
+    "/create",
     doNotAllowFields<IBook>("salesPrice"),
     mustHaveFields<IBook>(
         "name",

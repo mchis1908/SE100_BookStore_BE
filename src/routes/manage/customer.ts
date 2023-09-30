@@ -12,7 +12,7 @@ const router = Router()
 // CREATE CUSTOMER ACCOUNT
 router.post(
     "/create",
-    verifyRole(["admin", "employee"]),
+    verifyRole(["admin"]),
     mustHaveFields<IUser<ICustomer>>("address", "email", "phoneNumber", "birthdate", "name", "password"),
     async (req: Request, res: Response) => {
         try {
@@ -57,7 +57,7 @@ router.post(
 // EDIT CUSTOMER INFO
 router.put(
     "/edit-info",
-    verifyRole(["admin", "employee"]),
+    verifyRole(["admin"]),
     doNotAllowFields<IUser>("role", "password"),
     async (req: Request, res: Response) => {
         try {

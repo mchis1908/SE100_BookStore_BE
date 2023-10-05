@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run build && npm run serve",
-    "serve": "node -r dotenv/config dist/server.js",
+    "serve": "node -r dotenv/config dist/server.js --omit=dev",
     "build": "npm run clean && npm run build-ts",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q ./dist/server.js\"",
     "build-ts": "tsc",

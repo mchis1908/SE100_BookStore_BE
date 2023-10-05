@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { EUserRole, IUser, SCHEMA_NAME } from "../../interface"
+import mongoosePaginate from "mongoose-paginate-v2"
 
 const UserShema = new Schema<IUser>(
     {
@@ -52,4 +53,6 @@ const UserShema = new Schema<IUser>(
     }
 )
 
-export default model<IUser>(SCHEMA_NAME.USERS, UserShema, SCHEMA_NAME.USERS)
+UserShema.plugin(mongoosePaginate)
+
+export default model<IUser, PaginateModel<IUser>>(SCHEMA_NAME.USERS, UserShema, SCHEMA_NAME.USERS)

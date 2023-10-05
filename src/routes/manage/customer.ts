@@ -82,7 +82,29 @@ router.put(
 )
 
 // GET ALL CUSTOMERS
-router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {})
+router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
+    try {
+        const { page, limit } = req.query
+        const options: PaginateOptions = {
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+            populate: "user"
+        }
+        await User.paginate(
+            {
+                role: EUserRole.CUSTOMER
+            },
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            }
+        )
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 // GET TOP 10 CUSTOMERS
 router.get("/top-10", verifyRole(["admin", "employee"]), async (req, res) => {
@@ -99,7 +121,6 @@ router.get("/top-10", verifyRole(["admin", "employee"]), async (req, res) => {
             const { docs, ...rest } = result
             res.json({ success: true, data: docs, ...rest })
         })
-        // .sort({ point: -1 }).limit(10).populate("customer")
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

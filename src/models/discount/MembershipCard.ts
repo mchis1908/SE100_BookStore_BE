@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { ERank, IMembershipCard, SCHEMA_NAME } from "../../interface"
+import mongoosePaginate from "mongoose-paginate-v2"
 
 const MembershipCardSchema = new Schema<IMembershipCard>(
     {
@@ -26,4 +27,10 @@ const MembershipCardSchema = new Schema<IMembershipCard>(
     }
 )
 
-export default model<IMembershipCard>(SCHEMA_NAME.MEMBERSHIP_CARDS, MembershipCardSchema, SCHEMA_NAME.MEMBERSHIP_CARDS)
+MembershipCardSchema.plugin(mongoosePaginate)
+
+export default model<IMembershipCard, PaginateModel<IMembershipCard>>(
+    SCHEMA_NAME.MEMBERSHIP_CARDS,
+    MembershipCardSchema,
+    SCHEMA_NAME.MEMBERSHIP_CARDS
+)

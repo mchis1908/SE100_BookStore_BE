@@ -6,6 +6,7 @@ import { Customer, MembershipCard, User } from "../../models"
 import bcrypt from "bcryptjs"
 import Credential from "../../models/common/Credential"
 import doNotAllowFields from "../../middleware/not-allow-field"
+import { PaginateOptions } from "mongoose"
 
 const router = Router()
 
@@ -79,5 +80,29 @@ router.put(
         }
     }
 )
+
+// GET ALL CUSTOMERS
+router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {})
+
+// GET TOP 10 CUSTOMERS
+router.get("/top-10", verifyRole(["admin", "employee"]), async (req, res) => {
+    try {
+        const { page, limit } = req.query
+        const options: PaginateOptions = {
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+            sort: { point: -1 },
+            populate: "customer"
+        }
+        await MembershipCard.paginate({}, options, (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: err.message })
+            const { docs, ...rest } = result
+            res.json({ success: true, data: docs, ...rest })
+        })
+        // .sort({ point: -1 }).limit(10).populate("customer")
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 export default router

@@ -1,6 +1,7 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IBook, SCHEMA_NAME } from "../../interface"
 import { MAX_BOOK_QUANTITY } from "../../utils/common"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const BookSchema = new Schema<IBook>(
     {
@@ -55,4 +56,6 @@ const BookSchema = new Schema<IBook>(
     }
 )
 
-export default model<IBook>(SCHEMA_NAME.BOOKS, BookSchema, SCHEMA_NAME.BOOKS)
+BookSchema.plugin(mongooseePaginate)
+
+export default model<IBook, PaginateModel<IBook>>(SCHEMA_NAME.BOOKS, BookSchema, SCHEMA_NAME.BOOKS)

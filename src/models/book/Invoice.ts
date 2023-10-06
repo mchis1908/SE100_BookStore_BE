@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IInvoice, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const InvoiceSchema = new Schema<IInvoice>(
     {
@@ -39,4 +40,6 @@ const InvoiceSchema = new Schema<IInvoice>(
     }
 )
 
-export default model<IInvoice>(SCHEMA_NAME.INVOICES, InvoiceSchema, SCHEMA_NAME.INVOICES)
+InvoiceSchema.plugin(mongooseePaginate)
+
+export default model<IInvoice, PaginateModel<IInvoice>>(SCHEMA_NAME.INVOICES, InvoiceSchema, SCHEMA_NAME.INVOICES)

@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IVoucher, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const VoucherSchema = new Schema<IVoucher>(
     {
@@ -29,4 +30,6 @@ const VoucherSchema = new Schema<IVoucher>(
     }
 )
 
-export default model<IVoucher>(SCHEMA_NAME.VOUCHERS, VoucherSchema, SCHEMA_NAME.VOUCHERS)
+VoucherSchema.plugin(mongooseePaginate)
+
+export default model<IVoucher, PaginateModel<IVoucher>>(SCHEMA_NAME.VOUCHERS, VoucherSchema, SCHEMA_NAME.VOUCHERS)

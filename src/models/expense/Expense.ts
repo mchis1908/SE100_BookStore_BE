@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IExpense, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const ExpenseSchema = new Schema<IExpense>(
     {
@@ -31,4 +32,6 @@ const ExpenseSchema = new Schema<IExpense>(
     }
 )
 
-export default model<IExpense>(SCHEMA_NAME.EXPENSES, ExpenseSchema, SCHEMA_NAME.EXPENSES)
+ExpenseSchema.plugin(mongooseePaginate)
+
+export default model<IExpense, PaginateModel<IExpense>>(SCHEMA_NAME.EXPENSES, ExpenseSchema, SCHEMA_NAME.EXPENSES)

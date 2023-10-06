@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IProblemReport, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const ProblemReportSchema = new Schema<IProblemReport>(
     {
@@ -25,4 +26,10 @@ const ProblemReportSchema = new Schema<IProblemReport>(
     }
 )
 
-export default model<IProblemReport>(SCHEMA_NAME.PROBLEM_REPORTS, ProblemReportSchema, SCHEMA_NAME.PROBLEM_REPORTS)
+ProblemReportSchema.plugin(mongooseePaginate)
+
+export default model<IProblemReport, PaginateModel<IProblemReport>>(
+    SCHEMA_NAME.PROBLEM_REPORTS,
+    ProblemReportSchema,
+    SCHEMA_NAME.PROBLEM_REPORTS
+)

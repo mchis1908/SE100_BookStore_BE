@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IPreOrderBook, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const PreOrderBookSchema = new Schema<IPreOrderBook>(
     {
@@ -35,4 +36,10 @@ const PreOrderBookSchema = new Schema<IPreOrderBook>(
     }
 )
 
-export default model<IPreOrderBook>(SCHEMA_NAME.PREORDER_BOOKS, PreOrderBookSchema, SCHEMA_NAME.PREORDER_BOOKS)
+PreOrderBookSchema.plugin(mongooseePaginate)
+
+export default model<IPreOrderBook, PaginateModel<IPreOrderBook>>(
+    SCHEMA_NAME.PREORDER_BOOKS,
+    PreOrderBookSchema,
+    SCHEMA_NAME.PREORDER_BOOKS
+)

@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IDiscountBook, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const DiscountBookSchema = new Schema<IDiscountBook>(
     {
@@ -12,8 +13,15 @@ const DiscountBookSchema = new Schema<IDiscountBook>(
         }
     },
     {
-        versionKey: false
+        versionKey: false,
+        timestamps: true
     }
 )
 
-export default model<IDiscountBook>(SCHEMA_NAME.DISCOUNT_BOOKS, DiscountBookSchema, SCHEMA_NAME.DISCOUNT_BOOKS)
+DiscountBookSchema.plugin(mongooseePaginate)
+
+export default model<IDiscountBook, PaginateModel<IDiscountBook>>(
+    SCHEMA_NAME.DISCOUNT_BOOKS,
+    DiscountBookSchema,
+    SCHEMA_NAME.DISCOUNT_BOOKS
+)

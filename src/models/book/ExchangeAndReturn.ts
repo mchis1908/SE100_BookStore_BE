@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IExchangeAndReturn, SCHEMA_NAME } from "../../interface"
+import mongooseePaginate from "mongoose-paginate-v2"
 
 const ExchangeAndReturnSchema = new Schema<IExchangeAndReturn>(
     {
@@ -27,7 +28,9 @@ const ExchangeAndReturnSchema = new Schema<IExchangeAndReturn>(
     }
 )
 
-export default model<IExchangeAndReturn>(
+ExchangeAndReturnSchema.plugin(mongooseePaginate)
+
+export default model<IExchangeAndReturn, PaginateModel<IExchangeAndReturn>>(
     SCHEMA_NAME.EXCHANGE_AND_RETURNS,
     ExchangeAndReturnSchema,
     SCHEMA_NAME.EXCHANGE_AND_RETURNS

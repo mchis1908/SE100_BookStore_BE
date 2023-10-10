@@ -19,6 +19,7 @@ interface IUser<T = IAdmin | IEmployee | ICustomer> {
     password: string
     user: Types.ObjectId | T
     refPath: string // this is the path to the user's document in the database
+    isDeleted?: boolean
 }
 
 export default IUser

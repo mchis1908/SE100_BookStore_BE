@@ -4,6 +4,7 @@ import { IVoucher } from "../../interface"
 import mustHaveFields from "../../middleware/must-have-field"
 import { User, Voucher } from "../../models"
 import doNotAllowFields from "../../middleware/not-allow-field"
+import voucherCode from "voucher-code-generator"
 
 const router = Router()
 
@@ -23,8 +24,27 @@ router.post(
             if (new Date(expirationDate) < new Date()) {
                 return res.status(400).json({ success: false, message: `Expiration date must be in the future` })
             }
+
+            // eslint-disable-next-line no-inner-declarations
+            async function reTryGenerateCode() {
+                const code = voucherCode.generate({
+                    length: 16,
+                    count: 1,
+                    charset: voucherCode.charset("alphabetic").toUpperCase()
+                })[0]
+                const voucher = await Voucher.findOne({ code })
+                if (voucher) {
+                    // retry if code is duplicated with another voucher after 3s
+                    return setTimeout(() => {
+                        reTryGenerateCode()
+                    }, 3000)
+                }
+                return code
+            }
+
             const voucher = await Voucher.create({
-                ...req.body
+                ...req.body,
+                code: await reTryGenerateCode()
             })
             res.status(201).json({ success: true, message: "Voucher created successfully", voucher })
         } catch (error: any) {

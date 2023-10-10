@@ -14,4 +14,5 @@ export default interface IBook {
     importPrice: number
     salesPrice: number
     translator: string
+    isDeleted: boolean
 }

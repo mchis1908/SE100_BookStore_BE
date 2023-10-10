@@ -5,14 +5,18 @@ const CustomerSchema = new Schema<ICustomer>(
     {
         isLoyalCustomer: {
             type: Boolean,
-            default: false
+            default: true
         },
         purchasedBooks: [
             {
                 type: Schema.Types.ObjectId,
                 ref: SCHEMA_NAME.BOOKS
             }
-        ]
+        ],
+        membershipCard: {
+            type: Schema.Types.ObjectId,
+            ref: SCHEMA_NAME.MEMBERSHIP_CARDS
+        }
     },
     {
         versionKey: false,

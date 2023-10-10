@@ -6,8 +6,7 @@ const VoucherSchema = new Schema<IVoucher>(
     {
         name: {
             type: String,
-            required: true,
-            unique: true
+            required: true
         },
         customer: {
             type: Schema.Types.ObjectId,
@@ -22,6 +21,11 @@ const VoucherSchema = new Schema<IVoucher>(
         isUsed: {
             type: Boolean,
             default: false
+        },
+        code: {
+            type: String,
+            required: true,
+            unique: true
         }
     },
     {

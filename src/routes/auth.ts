@@ -49,10 +49,10 @@ router.post(
     }
 )
 
-router.post("/signin", mustHaveFields<IUser>("password"), async (req, res) => {
-    const { email, phoneNumber, password } = req.body as IUser
+router.post("/signin", mustHaveFields("emailOrphoneNumber", "password"), async (req, res) => {
+    const { emailOrphoneNumber, password } = req.body
     try {
-        const user = await User.findOne({ $or: [{ email }, { phoneNumber }] })
+        const user = await User.findOne({ $or: [{ email: emailOrphoneNumber }, { phoneNumber: emailOrphoneNumber }] })
         if (!user) return res.status(400).json({ success: false, message: "User does not exist" })
 
         const credential = await Credential.findOne({

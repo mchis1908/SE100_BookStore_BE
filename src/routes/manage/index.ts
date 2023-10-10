@@ -4,6 +4,7 @@ import manageBookstoreRouter from "./bookstore"
 import manageBookRouter from "./book"
 import manageOrderRouter from "./order"
 import manageVoucherRouter from "./voucher"
+import trashRouter from "./trash"
 
 export {
     manageEmployeeRouter,
@@ -11,5 +12,6 @@ export {
     manageBookstoreRouter,
     manageBookRouter,
     manageOrderRouter,
-    manageVoucherRouter
+    manageVoucherRouter,
+    trashRouter
 }

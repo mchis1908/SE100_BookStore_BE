@@ -25,21 +25,19 @@ router.post(
                     .status(400)
                     .json({ success: false, message: "This email/phoneNumber has been used by another" })
 
-            const newCustomer = await Customer.create({
-                isLoyalCustomer: true
-            })
-            const newUser = new User({
+            const newCustomer = await Customer.create({})
+            const newUser = await User.create({
                 ...req.body,
                 refPath: SCHEMA_NAME.CUSTOMERS,
                 user: newCustomer._id,
                 role: EUserRole.CUSTOMER
             })
 
-            await newUser.save()
-
-            const membershipCard = await MembershipCard.create({
-                customer: newUser._id
+            const newMembershipCard = await MembershipCard.create({
+                customer: newCustomer._id
             })
+            newCustomer.membershipCard = newMembershipCard._id
+            await newCustomer.save()
 
             const bcryptPassword = await bcrypt.hash(password, 10)
             const newCredential = new Credential({
@@ -88,11 +86,17 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
         const options: PaginateOptions = {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
-            populate: "user"
+            populate: {
+                path: "user",
+                populate: {
+                    path: "membershipCard"
+                }
+            }
         }
         await User.paginate(
             {
-                role: EUserRole.CUSTOMER
+                role: EUserRole.CUSTOMER,
+                isDeleted: false
             },
             options,
             (err, result) => {
@@ -114,13 +118,25 @@ router.get("/top-10", verifyRole(["admin", "employee"]), async (req, res) => {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
             sort: { point: -1 },
-            populate: "customer"
+            populate: {
+                path: "user",
+                populate: {
+                    path: "membershipCard"
+                }
+            }
         }
-        await MembershipCard.paginate({}, options, (err, result) => {
-            if (err) return res.status(500).json({ success: false, message: err.message })
-            const { docs, ...rest } = result
-            res.json({ success: true, data: docs, ...rest })
-        })
+        await User.paginate(
+            {
+                role: EUserRole.CUSTOMER,
+                isDeleted: false
+            },
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            }
+        )
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

@@ -45,6 +45,10 @@ const UserShema = new Schema<IUser>(
             type: String,
             enum: Object.values(SCHEMA_NAME),
             required: [true, "Ref path is required."]
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false
         }
     },
     {

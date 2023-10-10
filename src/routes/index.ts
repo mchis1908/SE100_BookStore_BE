@@ -9,7 +9,8 @@ import {
     manageCustomerRouter,
     manageEmployeeRouter,
     manageOrderRouter,
-    manageVoucherRouter
+    manageVoucherRouter,
+    trashRouter
 } from "./manage"
 import { clientBookRouter, customerRouter, invoiceRouter } from "./client"
 
@@ -23,6 +24,7 @@ export default function getRoutes(app: Express) {
     app.use("/api/manage/book", manageBookRouter)
     app.use("/api/manage/order", manageOrderRouter)
     app.use("/api/manage/voucher", manageVoucherRouter)
+    app.use("/api/manage/trash", trashRouter)
 
     app.use("/api/book", clientBookRouter)
     app.use("/api/invoice", invoiceRouter)

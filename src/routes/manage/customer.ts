@@ -55,12 +55,12 @@ router.post(
 
 // EDIT CUSTOMER INFO
 router.put(
-    "/edit-info",
+    "/edit-info/:customer_id",
     verifyRole(["admin", "employee"]),
     doNotAllowFields<IUser>("role", "password"),
     async (req: Request, res: Response) => {
         try {
-            const { customer_id } = req.query
+            const { customer_id } = req.params
             if (!customer_id) return res.status(400).json({ success: false, message: "Missing customer_id" })
             const user = await User.findOne({ user: customer_id })
             if (!user) return res.status(400).json({ success: false, message: "Customer not found" })

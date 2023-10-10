@@ -106,9 +106,9 @@ router.post(
 )
 
 // DELETE ORDER INVOICE
-router.delete("/delete-invoice", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.delete("/delete-invoice/:invoice_id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const { invoice_id } = req.query
+        const { invoice_id } = req.params
         const invoice = await Invoice.findById(invoice_id)
         if (!invoice) {
             return res.status(400).json({ success: false, message: `Invoice ${invoice_id} does not exist` })

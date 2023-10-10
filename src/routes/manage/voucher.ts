@@ -55,12 +55,12 @@ router.post(
 
 // USE VOUCHER
 router.put(
-    "/use",
+    "/use/:voucher_id",
     verifyRole(["admin", "customer"]),
     doNotAllowFields<IVoucher>("customer", "discountValue", "expirationDate"),
     async (req: Request, res: Response) => {
         try {
-            const { voucher_id } = req.query
+            const { voucher_id } = req.params
             const voucher = await Voucher.findById(voucher_id)
             if (!voucher) {
                 return res.status(400).json({ success: false, message: `Voucher ${voucher_id} does not exist` })
@@ -83,9 +83,9 @@ router.put(
 )
 
 // DELETE VOUCHER
-router.delete("/delete", verifyRole(["admin", "customer"]), async (req: Request, res: Response) => {
+router.delete("/:voucher_id", verifyRole(["admin", "customer"]), async (req: Request, res: Response) => {
     try {
-        const { voucher_id } = req.query
+        const { voucher_id } = req.params
         const voucher = await Voucher.findById(voucher_id)
         if (!voucher) {
             return res.status(400).json({ success: false, message: `Voucher ${voucher_id} does not exist` })

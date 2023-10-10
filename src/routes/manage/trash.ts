@@ -43,9 +43,10 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
 })
 
 // MOVE TO TRASH BY TYPE
-router.put("/move", verifyRole(["admin", "employee"]), async (req, res) => {
+router.put("/move/:object_id", verifyRole(["admin", "employee"]), async (req, res) => {
     try {
-        const { type, object_id } = req.query
+        const { type } = req.query
+        const { object_id } = req.params
         if (!type) return res.status(400).json({ success: false, message: "Missing type" })
         switch (type) {
             case EUserRole.CUSTOMER:
@@ -66,9 +67,10 @@ router.put("/move", verifyRole(["admin", "employee"]), async (req, res) => {
 })
 
 // RESTORE BY TYPE
-router.put("/restore", verifyRole(["admin", "employee"]), async (req, res) => {
+router.put("/restore/:object_id", verifyRole(["admin", "employee"]), async (req, res) => {
     try {
-        const { type, object_id } = req.query
+        const { type } = req.query
+        const { object_id } = req.params
         if (!type) return res.status(400).json({ success: false, message: "Missing type" })
         switch (type) {
             case EUserRole.CUSTOMER:

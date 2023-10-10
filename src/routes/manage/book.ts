@@ -39,26 +39,30 @@ router.post(
 )
 
 // EDIT CATEGORY
-router.put("/edit-category", doNotAllowFields<IBookCategory>("popularity"), async (req: Request, res: Response) => {
-    try {
-        const { category_id } = req.query
-        if (!category_id) {
-            return res.status(400).json({ success: false, message: "Missing category_id" })
-        }
-        const category = await BookCategory.findById(category_id)
-        if (!category) {
-            return res.status(400).json({ success: false, message: `Category ${category_id} does not exist` })
-        }
-        await category.updateOne({
-            $set: {
-                ...req.body
+router.put(
+    "/edit-category/:category_id",
+    doNotAllowFields<IBookCategory>("popularity"),
+    async (req: Request, res: Response) => {
+        try {
+            const { category_id } = req.params
+            if (!category_id) {
+                return res.status(400).json({ success: false, message: "Missing category_id" })
             }
-        })
-        res.json({ success: true, message: "Category updated successfully" })
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message })
+            const category = await BookCategory.findById(category_id)
+            if (!category) {
+                return res.status(400).json({ success: false, message: `Category ${category_id} does not exist` })
+            }
+            await category.updateOne({
+                $set: {
+                    ...req.body
+                }
+            })
+            res.json({ success: true, message: "Category updated successfully" })
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message })
+        }
     }
-})
+)
 
 // CREATE BOOK
 router.post(

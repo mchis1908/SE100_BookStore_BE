@@ -56,12 +56,12 @@ router.post(
 
 // EDIT EMPLOYEE INFO
 router.put(
-    "/edit-info",
+    "/edit-info/:employee_id",
     verifyRole(["admin"]),
     doNotAllowFields<IUser>("role", "password"),
     async (req: Request, res: Response) => {
         try {
-            const { employee_id } = req.query
+            const { employee_id } = req.params
             if (!employee_id) return res.status(400).json({ success: false, message: "Missing employee_id" })
             const user = await User.findOne({ user: employee_id })
             if (!user) return res.status(400).json({ success: false, message: "Employee not found" })
@@ -82,13 +82,13 @@ router.put(
 
 // EDIT EMPLOYEE SALARY
 router.put(
-    "/edit-salary",
+    "/edit-salary/:employee_id",
     verifyRole(["admin"]),
     mustHaveFields<IEmployee>("salary"),
     doNotAllowFields<IEmployee>("startDateOfWork", "seniority"),
     async (req: Request, res: Response) => {
         try {
-            const { employee_id } = req.query
+            const { employee_id } = req.params
             const employee = await Employee.findById(employee_id)
             if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
             await employee.updateOne({

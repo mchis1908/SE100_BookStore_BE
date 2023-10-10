@@ -13,7 +13,8 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
 
         const options: PaginateOptions = {
             page: Number(page) || 1,
-            limit: Number(limit) || 10
+            limit: Number(limit) || 10,
+            sort: { updatedAt: -1 }
         }
 
         if (!type) return res.status(400).json({ success: false, message: "Missing type" })

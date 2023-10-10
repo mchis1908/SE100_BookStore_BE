@@ -13,7 +13,7 @@ const router = Router()
 router.post(
     "/create",
     verifyRole(["admin"]),
-    mustHaveFields<IUser<IEmployee>>("address", "email", "phoneNumber", "birthdate", "name", "password"),
+    mustHaveFields<IUser<IEmployee>>("email", "phoneNumber", "name", "password"),
     mustHaveFields<IEmployee>("salary", "salaryScale", "salaryCoefficient"),
     async (req: Request, res: Response) => {
         try {

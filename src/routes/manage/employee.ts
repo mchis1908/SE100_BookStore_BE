@@ -6,6 +6,7 @@ import doNotAllowFields from "../../middleware/not-allow-field"
 import { Customer, Employee, User } from "../../models"
 import bcrypt from "bcryptjs"
 import Credential from "../../models/common/Credential"
+import { PaginateOptions } from "mongoose"
 
 const router = Router()
 
@@ -14,7 +15,7 @@ router.post(
     "/create",
     verifyRole(["admin"]),
     mustHaveFields<IUser<IEmployee>>("email", "phoneNumber", "name", "password"),
-    mustHaveFields<IEmployee>("salary", "salaryScale", "salaryCoefficient"),
+    mustHaveFields<IEmployee>("salary", "salaryScale"),
     async (req: Request, res: Response) => {
         try {
             const { email, password, startDateOfWork, salary, salaryScale, salaryCoefficient, phoneNumber } = req.body
@@ -28,7 +29,6 @@ router.post(
             const newEmployee = await Employee.create({
                 salary,
                 salaryScale,
-                salaryCoefficient,
                 startDateOfWork
             })
             const newUser = new User({
@@ -59,6 +59,7 @@ router.put(
     "/edit-info/:employee_id",
     verifyRole(["admin"]),
     doNotAllowFields<IUser>("role", "password"),
+    doNotAllowFields<IEmployee>("salaryScale", "startDateOfWork", "seniority"),
     async (req: Request, res: Response) => {
         try {
             const { employee_id } = req.params
@@ -102,5 +103,75 @@ router.put(
         }
     }
 )
+
+// EDIT EMPLOYEE SALARY SCALE
+router.put("/edit-salary-scale/:employee_id", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const { employee_id } = req.params
+        const { salaryScale } = req.body
+        const employee = await Employee.findById(employee_id)
+        if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
+        await employee.updateOne({
+            $set: {
+                salaryScale
+            }
+        })
+        res.json({ success: true, message: "Employee updated successfully" })
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
+
+// GET ALL EMPLOYEES
+router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const { page, limit, search_q, isDeleted, sort, sort_by } = req.query
+        const sortByArr = sort_by?.toString().split(",") || []
+        const options: PaginateOptions = {
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+            populate: {
+                path: "user",
+                populate: {
+                    path: "salaryScale"
+                }
+            },
+            sort: { ...(sort_by ? Object.fromEntries(sortByArr.map((item) => [item, sort === "asc" ? 1 : -1])) : {}) }
+        }
+        await User.paginate(
+            {
+                role: EUserRole.EMPLOYEE,
+                isDeleted: isDeleted === "true" ? true : false,
+                $or: search_q ? [{ name: { $regex: search_q as string, $options: "i" } }] : []
+            },
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            }
+        )
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
+
+// CHANGE EMPLOYEE SALARY SCALE
+router.put("/change-salary-scale/:employee_id", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const { employee_id } = req.params
+        const { salaryScale } = req.body
+        const employee = await Employee.findById(employee_id)
+        if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
+        await employee.updateOne({
+            $set: {
+                salaryScale
+            }
+        })
+        res.json({ success: true, message: "Employee updated successfully" })
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 export default router

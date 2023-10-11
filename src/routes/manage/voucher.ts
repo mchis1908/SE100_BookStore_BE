@@ -2,25 +2,24 @@ import { Request, Response, Router } from "express"
 import verifyRole from "../../middleware/verifyRole"
 import { IVoucher } from "../../interface"
 import mustHaveFields from "../../middleware/must-have-field"
-import { User, Voucher } from "../../models"
+import { Customer, User, Voucher } from "../../models"
 import doNotAllowFields from "../../middleware/not-allow-field"
 import voucherCode from "voucher-code-generator"
+import { Types } from "mongoose"
+import { sendMail } from "../../service/mailer"
+import { sendVoucher } from "../../template/mail"
 
 const router = Router()
+const toId = Types.ObjectId
 
 // CREATE VOUCHER
 router.post(
     "/create",
-    verifyRole(["admin", "customer"]),
-    mustHaveFields<IVoucher>("customer", "discountValue", "expirationDate", "name"),
-    doNotAllowFields<IVoucher>("isUsed"),
+    verifyRole(["admin", "employee"]),
+    mustHaveFields<IVoucher>("discountValue", "expirationDate", "name", "level"),
     async (req: Request, res: Response) => {
         try {
-            const { customer, expirationDate } = req.body as IVoucher
-            const _customer = await User.findById(customer)
-            if (!_customer) {
-                return res.status(400).json({ success: false, message: `Customer ${customer} does not exist` })
-            }
+            const { expirationDate } = req.body as IVoucher
             if (new Date(expirationDate) < new Date()) {
                 return res.status(400).json({ success: false, message: `Expiration date must be in the future` })
             }
@@ -46,6 +45,18 @@ router.post(
                 ...req.body,
                 code: await reTryGenerateCode()
             })
+
+            const customers = await Customer.find({
+                level: { $gte: voucher.level }
+            })
+            const customerEmails = await User.find({
+                user: { $in: customers.map((customer) => customer._id) }
+            }).select("email")
+            const emails = customerEmails.map((user) => user.email)
+            for (const email of emails) {
+                await sendVoucher(email, voucher)
+            }
+
             res.status(201).json({ success: true, message: "Voucher created successfully", voucher })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
@@ -56,16 +67,20 @@ router.post(
 // USE VOUCHER
 router.put(
     "/use/:voucher_id",
-    verifyRole(["admin", "customer"]),
-    doNotAllowFields<IVoucher>("customer", "discountValue", "expirationDate"),
+    verifyRole(["admin", "employee"]),
+    doNotAllowFields<IVoucher>("discountValue", "expirationDate"),
     async (req: Request, res: Response) => {
         try {
             const { voucher_id } = req.params
+            const { customer_id } = req.query
+            if (!customer_id) return res.status(400).json({ success: false, message: "Missing customer_id" })
             const voucher = await Voucher.findById(voucher_id)
             if (!voucher) {
                 return res.status(400).json({ success: false, message: `Voucher ${voucher_id} does not exist` })
             }
-            if (voucher.isUsed) {
+            const customerId = new toId(customer_id.toString())
+            const isCustomerUsedVoucher = voucher.customersUsed.find((customer) => customer.toString() === customer_id)
+            if (isCustomerUsedVoucher) {
                 return res
                     .status(400)
                     .json({ success: false, message: `Voucher ${voucher.name} has already been used` })
@@ -73,8 +88,17 @@ router.put(
             if (voucher.expirationDate < new Date()) {
                 return res.status(400).json({ success: false, message: `Voucher ${voucher.name} has expired` })
             }
-            voucher.isUsed = true
-            await voucher.save()
+            await Customer.updateOne({ _id: customerId }, { $push: { vouchers: voucher_id } })
+            await voucher.updateOne(
+                {
+                    $push: {
+                        customersUsed: customerId
+                    }
+                },
+                {
+                    new: true
+                }
+            )
             res.status(200).json({ success: true, message: "Voucher used successfully", voucher })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
@@ -83,13 +107,14 @@ router.put(
 )
 
 // DELETE VOUCHER
-router.delete("/:voucher_id", verifyRole(["admin", "customer"]), async (req: Request, res: Response) => {
+router.delete("/:voucher_id", verifyRole(["admin", "employee", "customer"]), async (req: Request, res: Response) => {
     try {
         const { voucher_id } = req.params
         const voucher = await Voucher.findById(voucher_id)
         if (!voucher) {
             return res.status(400).json({ success: false, message: `Voucher ${voucher_id} does not exist` })
         }
+        await Customer.updateOne({ _id: req.user_id }, { $pull: { usedVouchers: voucher_id } })
         await voucher.deleteOne()
         res.status(200).json({ success: true, message: "Voucher deleted successfully", voucher })
     } catch (error: any) {

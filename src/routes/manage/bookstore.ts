@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express"
 import mustHaveFields from "../../middleware/must-have-field"
-import { IFloor, IRow } from "../../interface"
-import { Floor, Row } from "../../models"
+import { IDiscountEvent, IFloor, IRow } from "../../interface"
+import { Book, DiscountEvent, Floor, ProblemReport, Row } from "../../models"
 import { MAX_FLOOR, MAX_ROW } from "../../utils/common"
 import verifyRole from "../../middleware/verifyRole"
 
@@ -62,6 +62,57 @@ router.post(
             res.json({ success: true, message: "Row created successfully" })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
+        }
+    }
+)
+
+// CREATE EVENT
+router.post(
+    "/create-event",
+    verifyRole(["admin"]),
+    mustHaveFields<IDiscountEvent>("discountBooks", "startAt", "endAt", "name", "image", "eventDiscountValue"),
+    async (req: Request, res: Response) => {
+        try {
+            const { startAt, endAt, discountBooks, eventDiscountValue } = req.body as IDiscountEvent
+
+            if (startAt > endAt)
+                return res.status(400).json({ success: false, message: "Start time must be before end time" })
+            const newEvent = await DiscountEvent.create({
+                ...req.body
+            })
+            await Book.updateMany(
+                { _id: { $in: discountBooks } },
+                {
+                    $set: {
+                        discountValue: eventDiscountValue
+                    }
+                }
+            )
+            res.json({ success: true, message: "Event created successfully", data: newEvent })
+        } catch (error: any) {
+            return res.status(500).json({ success: false, message: error.message })
+        }
+    }
+)
+
+// UPDATE PROBLEM REPORT STATUS
+router.put(
+    "/update-problem-report-status/:problemReportId",
+    verifyRole(["admin"]),
+    mustHaveFields("status"),
+    async (req: Request, res: Response) => {
+        try {
+            const { problemReportId } = req.params
+            const { status } = req.body
+            const problemReport = await ProblemReport.findById(problemReportId)
+            if (!problemReport) {
+                return res.status(400).json({ success: false, message: "Problem report not found" })
+            }
+            problemReport.status = status
+            await problemReport.save()
+            res.json({ success: true, message: "Problem report updated successfully" })
+        } catch (error: any) {
+            return res.status(500).json({ success: false, message: error.message })
         }
     }
 )

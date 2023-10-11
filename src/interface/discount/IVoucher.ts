@@ -5,7 +5,7 @@ export default interface IVoucher {
     name: string
     code: string
     discountValue: number
-    customer: Types.ObjectId | IUser
-    isUsed: boolean
+    customersUsed: Types.ObjectId[] | IUser[]
     expirationDate: Date
+    level: number
 }

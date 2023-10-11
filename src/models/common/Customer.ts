@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose"
 import { ICustomer, SCHEMA_NAME } from "../../interface"
+import { RANKS } from "../../interface/common/ICustomer"
 
 const CustomerSchema = new Schema<ICustomer>(
     {
@@ -13,10 +14,26 @@ const CustomerSchema = new Schema<ICustomer>(
                 ref: SCHEMA_NAME.BOOKS
             }
         ],
-        membershipCard: {
-            type: Schema.Types.ObjectId,
-            ref: SCHEMA_NAME.MEMBERSHIP_CARDS
-        }
+        level: {
+            type: Number,
+            enum: Object.keys(RANKS),
+            default: 1
+        },
+        rank: {
+            type: String,
+            enum: Object.values(RANKS),
+            default: RANKS[1]
+        },
+        point: {
+            type: Number,
+            default: 0
+        },
+        usedVouchers: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: SCHEMA_NAME.VOUCHERS
+            }
+        ]
     },
     {
         versionKey: false,

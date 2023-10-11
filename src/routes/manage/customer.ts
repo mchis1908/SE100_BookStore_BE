@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express"
 import verifyRole from "../../middleware/verifyRole"
 import mustHaveFields from "../../middleware/must-have-field"
 import { EUserRole, ICustomer, IUser, SCHEMA_NAME } from "../../interface"
-import { Customer, MembershipCard, User } from "../../models"
+import { Customer, User } from "../../models"
 import bcrypt from "bcryptjs"
 import Credential from "../../models/common/Credential"
 import doNotAllowFields from "../../middleware/not-allow-field"
@@ -33,10 +33,6 @@ router.post(
                 role: EUserRole.CUSTOMER
             })
 
-            const newMembershipCard = await MembershipCard.create({
-                customer: newCustomer._id
-            })
-            newCustomer.membershipCard = newMembershipCard._id
             await newCustomer.save()
 
             const bcryptPassword = await bcrypt.hash(password, 10)
@@ -87,10 +83,7 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
             populate: {
-                path: "user",
-                populate: {
-                    path: "membershipCard"
-                }
+                path: "user"
             }
         }
         await User.paginate(
@@ -119,10 +112,7 @@ router.get("/top-10", verifyRole(["admin", "employee"]), async (req, res) => {
             limit: Number(limit) || 10,
             sort: { point: -1 },
             populate: {
-                path: "user",
-                populate: {
-                    path: "membershipCard"
-                }
+                path: "user"
             }
         }
         await User.paginate(

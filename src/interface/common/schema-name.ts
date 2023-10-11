@@ -22,7 +22,7 @@ enum SCHEMA_NAME {
     PREORDER_BOOKS = "preorder_books",
     PREORDER_BOOK_DETAILS = "preorder_book_details",
     PROBLEM_REPORTS = "problem_reports",
-    MEMBERSHIP_CARDS = "membership_cards"
+    SALARY_SCALES = "salary_scales"
 }
 
 export default SCHEMA_NAME

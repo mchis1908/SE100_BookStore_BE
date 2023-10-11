@@ -15,4 +15,6 @@ export default interface IBook {
     salesPrice: number
     translator: string
     isDeleted: boolean
+    discountValue: number
+    image: string
 }

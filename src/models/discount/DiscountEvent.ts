@@ -4,6 +4,10 @@ import mongooseePaginate from "mongoose-paginate-v2"
 
 const DiscountEventSchema = new Schema<IDiscountEvent>(
     {
+        name: {
+            type: String,
+            required: [true, "Name is required"]
+        },
         discountBooks: [
             {
                 type: Schema.Types.ObjectId,
@@ -14,16 +18,18 @@ const DiscountEventSchema = new Schema<IDiscountEvent>(
             type: String
         },
         startAt: {
-            type: Date
+            type: Date,
+            required: [true, "Start date is required"]
         },
         endAt: {
-            type: Date
+            type: Date,
+            required: [true, "End date is required"]
         },
         eventDiscountValue: {
             type: Number
         },
-        images: {
-            type: [String]
+        image: {
+            type: String
         }
     },
     {

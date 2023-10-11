@@ -1,5 +1,5 @@
 import { PaginateModel, Schema, model } from "mongoose"
-import { IVoucher, SCHEMA_NAME } from "../../interface"
+import { ERank, IVoucher, SCHEMA_NAME } from "../../interface"
 import mongooseePaginate from "mongoose-paginate-v2"
 
 const VoucherSchema = new Schema<IVoucher>(
@@ -8,24 +8,29 @@ const VoucherSchema = new Schema<IVoucher>(
             type: String,
             required: true
         },
-        customer: {
-            type: Schema.Types.ObjectId,
-            ref: SCHEMA_NAME.USERS
-        },
+        customersUsed: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: SCHEMA_NAME.USERS
+            }
+        ],
         discountValue: {
             type: Number
         },
         expirationDate: {
-            type: Date
-        },
-        isUsed: {
-            type: Boolean,
-            default: false
+            type: Date,
+            default: new Date(),
+            min: [new Date(), "Expiration date must be greater than or equal to today"]
         },
         code: {
             type: String,
             required: true,
             unique: true
+        },
+        level: {
+            type: Number,
+            default: 1,
+            required: true
         }
     },
     {

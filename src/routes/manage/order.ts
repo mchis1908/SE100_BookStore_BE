@@ -1,13 +1,13 @@
 import { Request, Response, Router } from "express"
-import verifyRole from "../../middleware/verifyRole"
-import mustHaveFields from "../../middleware/must-have-field"
-import { ERank, IInvoice, IInvoiceDetail } from "../../interface"
-import { Book, Invoice, MembershipCard, User } from "../../models"
-import InvoiceDetails from "../../models/book/InvoiceDetails"
-import { POINT_RANKING, RANK } from "../../utils/common"
-import { EINVOICE_TYPE, IUserInvoice } from "../../interface/book/IInvoice"
 import { Types } from "mongoose"
+import { ERank, ICustomer, IInvoice, IUser } from "../../interface"
+import { EINVOICE_TYPE } from "../../interface/book/IInvoice"
+import mustHaveFields from "../../middleware/must-have-field"
+import verifyRole from "../../middleware/verifyRole"
+import { Customer, Invoice, User } from "../../models"
+import InvoiceDetails from "../../models/book/InvoiceDetails"
 import UserInvoice from "../../models/book/UserInvoice"
+import { GOLD_REACH_POINT, PLATINUM_REACH_POINT, POINT_RANKING, SILVER_REACH_POINT } from "../../utils/common"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -39,6 +39,7 @@ const toId = Types.ObjectId
 //     }
 // )
 
+// ORDER INVOICE
 router.post(
     "/create-order",
     mustHaveFields<IInvoice>("invoiceDetails", "customer"),
@@ -52,35 +53,30 @@ router.post(
                 return res.status(400).json({ success: false, message: `Customer ${customer} does not exist` })
             }
 
-            const point = total / POINT_RANKING
-
-            const membershipCard = await MembershipCard.findOne({ customer })
-            if (!membershipCard) {
-                return res
-                    .status(400)
-                    .json({ success: false, message: `Customer ${_customer.name} does not have membership card` })
+            const __customer = await Customer.findById(_customer.user)
+            if (!__customer) {
+                return res.status(400).json({ success: false, message: `Customer ${customer} does not exist` })
             }
 
-            membershipCard.point += point
-            const membershipCardPoint = membershipCard.point
+            const point = total / POINT_RANKING
+            __customer.point += point
+            const newPoint = __customer.point
             switch (true) {
-                case membershipCardPoint >= RANK.platinum:
-                    membershipCard.rank = ERank.PLATINUM
+                case newPoint >= PLATINUM_REACH_POINT:
+                    __customer.rank = ERank.PLATINUM
                     break
-                case membershipCardPoint >= RANK.gold:
-                    membershipCard.rank = ERank.GOLD
+                case newPoint >= GOLD_REACH_POINT:
+                    __customer.rank = ERank.GOLD
                     break
-                case membershipCardPoint >= RANK.silver:
-                    membershipCard.rank = ERank.SILVER
+                case newPoint >= SILVER_REACH_POINT:
+                    __customer.rank = ERank.SILVER
                     break
                 default:
-                    membershipCard.rank = ERank.BRONZE
+                    __customer.rank = ERank.BRONZE
                     break
             }
 
-            membershipCard.lastTransaction = new Date()
-            await membershipCard.save()
-
+            await __customer.save()
             const newInvoiceDetails = await InvoiceDetails.insertMany(invoiceDetails)
 
             const userInvoice = await UserInvoice.create({

@@ -1,13 +1,22 @@
 import { Request, Response, Router } from "express"
 import { Book, BookCategory } from "../../models"
 import { IBook } from "../../interface"
+import { PaginateOptions } from "mongoose"
 
 const router = Router()
 
 router.get("/", async (req: Request, res: Response) => {
     try {
-        const books = await Book.find({}).populate("categories", "name")
-        res.status(200).json({ success: true, data: books })
+        const { page, limit } = req.query
+        const options: PaginateOptions = {
+            page: Number(page) || 1,
+            limit: Number(limit) || 10
+        }
+        await Book.paginate({}, options, (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: err.message })
+            const { docs, ...rest } = result
+            res.json({ success: true, data: docs, ...rest })
+        })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

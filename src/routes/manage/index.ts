@@ -5,6 +5,7 @@ import manageBookRouter from "./book"
 import manageOrderRouter from "./order"
 import manageVoucherRouter from "./voucher"
 import trashRouter from "./trash"
+import salaryScale from "./salary-scale"
 
 export {
     manageEmployeeRouter,
@@ -13,5 +14,6 @@ export {
     manageBookRouter,
     manageOrderRouter,
     manageVoucherRouter,
-    trashRouter
+    trashRouter,
+    salaryScale
 }

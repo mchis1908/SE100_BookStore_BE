@@ -1,6 +1,7 @@
 import { PaginateModel, Schema, model } from "mongoose"
 import { IProblemReport, SCHEMA_NAME } from "../../interface"
 import mongooseePaginate from "mongoose-paginate-v2"
+import { EProblemReportStatus } from "../../interface/report/IProblemReport"
 
 const ProblemReportSchema = new Schema<IProblemReport>(
     {
@@ -18,6 +19,11 @@ const ProblemReportSchema = new Schema<IProblemReport>(
         },
         reportingLocation: {
             type: String
+        },
+        status: {
+            type: String,
+            enum: Object.values(EProblemReportStatus),
+            default: EProblemReportStatus.PENDING
         }
     },
     {

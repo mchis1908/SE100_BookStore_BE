@@ -2,6 +2,7 @@ import { PaginateModel, Schema, model } from "mongoose"
 import { IBook, SCHEMA_NAME } from "../../interface"
 import { MAX_BOOK_QUANTITY } from "../../utils/common"
 import mongooseePaginate from "mongoose-paginate-v2"
+import DiscountEvent from "../discount/DiscountEvent"
 
 const BookSchema = new Schema<IBook>(
     {
@@ -52,6 +53,15 @@ const BookSchema = new Schema<IBook>(
         isDeleted: {
             type: Boolean,
             default: false
+        },
+        discountValue: {
+            type: Number,
+            default: 1,
+            min: [0, "Discount value must be greater than or equal to 0"],
+            max: [1, "Discount value must be less than or equal to 1"]
+        },
+        image: {
+            type: String
         }
     },
     {

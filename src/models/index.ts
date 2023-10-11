@@ -17,7 +17,6 @@ import ExpenseType from "./expense/ExpenseType"
 import PreOrderBook from "./pre-order/PreOrderBook"
 import PreOrderBookDetail from "./pre-order/PreOrderBookDetails"
 import ProblemReport from "./report/ProblemReport"
-import MembershipCard from "./discount/MembershipCard"
 
 export {
     Admin,
@@ -38,6 +37,5 @@ export {
     ExpenseType,
     PreOrderBook,
     PreOrderBookDetail,
-    ProblemReport,
-    MembershipCard
+    ProblemReport
 }

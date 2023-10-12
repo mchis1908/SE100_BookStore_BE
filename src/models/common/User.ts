@@ -11,9 +11,7 @@ const UserShema = new Schema<IUser>(
             unique: true
         },
         address: {
-            type: String,
-            minlength: [6, "Address must be at least 6 characters."],
-            maxlength: [255, "Address must be at most 255 characters."]
+            type: String
         },
         phoneNumber: {
             type: String,

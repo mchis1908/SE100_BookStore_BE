@@ -4,13 +4,15 @@ import rootRouter from "./root"
 import userRouter from "./user"
 
 import {
+    expenseRouter,
+    expenseTypeRouter,
     manageBookRouter,
     manageBookstoreRouter,
     manageCustomerRouter,
     manageEmployeeRouter,
     manageOrderRouter,
     manageVoucherRouter,
-    salaryScale,
+    salaryScaleRouter,
     trashRouter
 } from "./manage"
 import { clientBookRouter, customerRouter, invoiceRouter } from "./client"
@@ -26,7 +28,9 @@ export default function getRoutes(app: Express) {
     app.use("/api/manage/order", manageOrderRouter)
     app.use("/api/manage/voucher", manageVoucherRouter)
     app.use("/api/manage/trash", trashRouter)
-    app.use("/api/manage/salary-scale", salaryScale)
+    app.use("/api/manage/salary-scale", salaryScaleRouter)
+    app.use("/api/manage/expense", expenseRouter)
+    app.use("/api/manage/expense-type", expenseTypeRouter)
 
     app.use("/api/book", clientBookRouter)
     app.use("/api/invoice", invoiceRouter)

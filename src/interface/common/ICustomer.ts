@@ -22,5 +22,6 @@ export default interface ICustomer {
     level: number
     rank: ERank
     point: number
+    lastTransaction: Date
     usedVouchers: Types.ObjectId[] | IVoucher[]
 }

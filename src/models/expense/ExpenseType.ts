@@ -11,7 +11,6 @@ const ExpenseTypeSchema = new Schema<IExpenseType>(
         }
     },
     {
-        timestamps: true,
         versionKey: false
     }
 )

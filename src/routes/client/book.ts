@@ -10,7 +10,11 @@ router.get("/", async (req: Request, res: Response) => {
         const { page, limit } = req.query
         const options: PaginateOptions = {
             page: Number(page) || 1,
-            limit: Number(limit) || 10
+            limit: Number(limit) || 10,
+            populate: {
+                path: "categories",
+                select: "name"
+            }
         }
         await Book.paginate({}, options, (err, result) => {
             if (err) return res.status(500).json({ success: false, message: err.message })

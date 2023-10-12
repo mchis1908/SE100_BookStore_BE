@@ -1,12 +1,13 @@
 import { Request, Response, Router } from "express"
-import verifyRole from "../../middleware/verifyRole"
-import mustHaveFields from "../../middleware/must-have-field"
-import { EUserRole, ICustomer, IEmployee, IUser, SCHEMA_NAME } from "../../interface"
-import doNotAllowFields from "../../middleware/not-allow-field"
-import { Customer, Employee, User } from "../../models"
+import verifyRole from "../../../middleware/verifyRole"
+import mustHaveFields from "../../../middleware/must-have-field"
+import { EUserRole, ICustomer, IEmployee, IUser, SCHEMA_NAME } from "../../../interface"
+import doNotAllowFields from "../../../middleware/not-allow-field"
+import { Customer, Employee, User } from "../../../models"
 import bcrypt from "bcryptjs"
-import Credential from "../../models/common/Credential"
+import Credential from "../../../models/common/Credential"
 import { PaginateOptions } from "mongoose"
+import SalaryScale from "../../../models/common/SalaryScale"
 
 const router = Router()
 
@@ -18,7 +19,7 @@ router.post(
     mustHaveFields<IEmployee>("salary", "salaryScale"),
     async (req: Request, res: Response) => {
         try {
-            const { email, password, startDateOfWork, salary, salaryScale, salaryCoefficient, phoneNumber } = req.body
+            const { email, password, startDateOfWork, salary, salaryScale, phoneNumber } = req.body
 
             const user = await User.findOne({ $or: [{ email }, { phoneNumber }] })
             if (user)
@@ -86,7 +87,7 @@ router.put(
     "/edit-salary/:employee_id",
     verifyRole(["admin"]),
     mustHaveFields<IEmployee>("salary"),
-    doNotAllowFields<IEmployee>("startDateOfWork", "seniority"),
+    doNotAllowFields<IEmployee>("startDateOfWork", "seniority", "salaryScale"),
     async (req: Request, res: Response) => {
         try {
             const { employee_id } = req.params
@@ -94,7 +95,7 @@ router.put(
             if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
             await employee.updateOne({
                 $set: {
-                    ...req.body
+                    salary: req.body.salary
                 }
             })
             res.json({ success: true, message: "Employee updated successfully" })
@@ -111,6 +112,8 @@ router.put("/edit-salary-scale/:employee_id", verifyRole(["admin"]), async (req:
         const { salaryScale } = req.body
         const employee = await Employee.findById(employee_id)
         if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
+        const _salaryScale = await SalaryScale.findById(salaryScale)
+        if (!_salaryScale) return res.status(400).json({ success: false, message: "Salary scale not found" })
         await employee.updateOne({
             $set: {
                 salaryScale
@@ -142,7 +145,14 @@ router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
             {
                 role: EUserRole.EMPLOYEE,
                 isDeleted: isDeleted === "true" ? true : false,
-                $or: search_q ? [{ name: { $regex: search_q as string, $options: "i" } }] : []
+                $or: search_q
+                    ? [
+                          { name: { $regex: search_q as string, $options: "i" } },
+                          {
+                              "user.salaryScale.coefficient": { $regex: search_q as string, $options: "i" }
+                          }
+                      ]
+                    : []
             },
             options,
             (err, result) => {

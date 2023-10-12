@@ -32,10 +32,20 @@ router.post(
     }
 )
 
+// GET ALL FLOORS
+router.get("/floors", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const floors = await Floor.find({})
+        res.json({ success: true, data: floors })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
+
 // CREATE ROW
 router.post(
     "/create-row",
-    verifyRole(["admin"]),
+    verifyRole(["admin", "employee"]),
     mustHaveFields<IRow>("index", "numberOfEmployee"),
     async (req: Request, res: Response) => {
         try {
@@ -59,12 +69,32 @@ router.post(
                 numberOfEmployee,
                 floor: floor_id
             })
+            await floor.updateOne({
+                $push: {
+                    rows: row._id
+                }
+            })
             res.json({ success: true, message: "Row created successfully" })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
         }
     }
 )
+
+// GET ALL ROWS
+router.get("/rows", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const floors = await Row.find({}, undefined, {
+            populate: {
+                path: "floor",
+                select: "-rows"
+            }
+        })
+        res.json({ success: true, data: floors })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 // CREATE EVENT
 router.post(
@@ -116,5 +146,18 @@ router.put(
         }
     }
 )
+
+// GET ALL PROBLEM REPORTS
+router.get("/problem-reports", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const { status } = req.query
+        const problemReports = await ProblemReport.find({
+            ...(status && { status })
+        })
+        res.json({ success: true, data: problemReports })
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 export default router

@@ -1,11 +1,11 @@
 import { Request, Response, Router } from "express"
-import verifyRole from "../../middleware/verifyRole"
-import mustHaveFields from "../../middleware/must-have-field"
-import { EUserRole, ICustomer, IUser, SCHEMA_NAME } from "../../interface"
-import { Customer, User } from "../../models"
+import verifyRole from "../../../middleware/verifyRole"
+import mustHaveFields from "../../../middleware/must-have-field"
+import { EUserRole, ICustomer, IUser, SCHEMA_NAME } from "../../../interface"
+import { Customer, User } from "../../../models"
 import bcrypt from "bcryptjs"
-import Credential from "../../models/common/Credential"
-import doNotAllowFields from "../../middleware/not-allow-field"
+import Credential from "../../../models/common/Credential"
+import doNotAllowFields from "../../../middleware/not-allow-field"
 import { PaginateOptions } from "mongoose"
 
 const router = Router()

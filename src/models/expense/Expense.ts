@@ -1,10 +1,11 @@
 import { PaginateModel, Schema, model } from "mongoose"
 import { IExpense, SCHEMA_NAME } from "../../interface"
 import mongooseePaginate from "mongoose-paginate-v2"
+import { EExpenseStatus } from "../../interface/expense/IExpense"
 
 const ExpenseSchema = new Schema<IExpense>(
     {
-        employee: {
+        statusUpdatedBy: {
             type: Schema.Types.ObjectId,
             ref: SCHEMA_NAME.USERS
         },
@@ -12,7 +13,7 @@ const ExpenseSchema = new Schema<IExpense>(
             type: Schema.Types.ObjectId,
             ref: SCHEMA_NAME.EXPENSE_TYPES
         },
-        beingApprovedAt: {
+        statusUpdatedAt: {
             type: Date
         },
         description: {
@@ -21,9 +22,10 @@ const ExpenseSchema = new Schema<IExpense>(
         cost: {
             type: Number
         },
-        isApproved: {
-            type: Boolean,
-            default: false
+        status: {
+            type: String,
+            enum: Object.values(EExpenseStatus),
+            default: EExpenseStatus.PENDING
         }
     },
     {

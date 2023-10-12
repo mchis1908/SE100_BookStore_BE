@@ -28,6 +28,10 @@ const CustomerSchema = new Schema<ICustomer>(
             type: Number,
             default: 0
         },
+        lastTransaction: {
+            type: Date,
+            default: Date.now()
+        },
         usedVouchers: [
             {
                 type: Schema.Types.ObjectId,

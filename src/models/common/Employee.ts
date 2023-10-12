@@ -15,7 +15,8 @@ const EmployeeSchema = new Schema<IEmployee>(
         },
         seniority: {
             type: Number,
-            min: [0, "Seniority must be greater than or equal to 0"]
+            min: [0, "Seniority must be greater than or equal to 0"],
+            default: 0
         },
         salaryScale: {
             type: Schema.Types.ObjectId,

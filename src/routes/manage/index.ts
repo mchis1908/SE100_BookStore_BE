@@ -1,11 +1,13 @@
-import manageEmployeeRouter from "./employee"
-import manageCustomerRouter from "./customer"
+import manageEmployeeRouter from "./user/employee"
+import manageCustomerRouter from "./user/customer"
 import manageBookstoreRouter from "./bookstore"
 import manageBookRouter from "./book"
 import manageOrderRouter from "./order"
 import manageVoucherRouter from "./voucher"
 import trashRouter from "./trash"
-import salaryScale from "./salary-scale"
+import salaryScaleRouter from "./salary-scale"
+import expenseRouter from "./expense/expense"
+import expenseTypeRouter from "./expense/expense-type"
 
 export {
     manageEmployeeRouter,
@@ -15,5 +17,7 @@ export {
     manageOrderRouter,
     manageVoucherRouter,
     trashRouter,
-    salaryScale
+    salaryScaleRouter,
+    expenseTypeRouter,
+    expenseRouter
 }

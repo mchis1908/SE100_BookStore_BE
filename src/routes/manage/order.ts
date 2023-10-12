@@ -1,10 +1,10 @@
-import { Request, Response, Router } from "express"
+import { NextFunction, Request, Response, Router } from "express"
 import { Types } from "mongoose"
-import { ERank, ICustomer, IInvoice, IUser } from "../../interface"
+import { ERank, ICustomer, IInvoice, IInvoiceDetail, IUser } from "../../interface"
 import { EINVOICE_TYPE } from "../../interface/book/IInvoice"
 import mustHaveFields from "../../middleware/must-have-field"
 import verifyRole from "../../middleware/verifyRole"
-import { Customer, Invoice, User } from "../../models"
+import { Book, Customer, Invoice, User, Voucher } from "../../models"
 import InvoiceDetails from "../../models/book/InvoiceDetails"
 import UserInvoice from "../../models/book/UserInvoice"
 import { GOLD_REACH_POINT, PLATINUM_REACH_POINT, POINT_RANKING, SILVER_REACH_POINT } from "../../utils/common"
@@ -58,6 +58,21 @@ router.post(
                 return res.status(400).json({ success: false, message: `Customer ${customer} does not exist` })
             }
 
+            for (const voucher of vouchers) {
+                const _voucher = await Voucher.findById(voucher)
+                if (_voucher) {
+                    const _voucherCustomersUseds = _voucher.customersUsed.map((customerUsed) => customerUsed.toString())
+                    if (_voucherCustomersUseds.includes(customer)) {
+                        return res.status(400).json({ success: false, message: `Voucher ${voucher} has been used` })
+                    }
+                    await _voucher.updateOne({
+                        $set: {
+                            customersUsed: [..._voucherCustomersUseds, customer]
+                        }
+                    })
+                }
+            }
+
             const point = total / POINT_RANKING
             __customer.point += point
             const newPoint = __customer.point
@@ -76,17 +91,27 @@ router.post(
                     break
             }
 
-            await __customer.save()
-            const newInvoiceDetails = await InvoiceDetails.insertMany(invoiceDetails)
-
             const userInvoice = await UserInvoice.create({
                 eventDiscountValue,
                 vouchers
             })
+            __customer.lastTransaction = new Date()
+            await __customer.save()
+            const newInvoiceDetails = await InvoiceDetails.insertMany(invoiceDetails)
+
+            const invoiceDetailsIds = newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id)
+
+            invoiceDetails.forEach(async (invoiceDetail: IInvoiceDetail) => {
+                const _book = await Book.findById(invoiceDetail.book)
+                if (_book) {
+                    _book.quantity -= invoiceDetail.quantity
+                    await _book.save()
+                }
+            })
 
             const newInvoice = await Invoice.create({
                 employee: new toId(req.user_id),
-                invoiceDetails: newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id),
+                invoiceDetails: invoiceDetailsIds,
                 total,
                 invoice: userInvoice._id,
                 type: EINVOICE_TYPE.USER,

@@ -10,12 +10,12 @@ const RowSchema = new Schema<IRow>(
             min: [1, "Index must be greater than 0"],
             max: [MAX_ROW, `Index must be less than ${MAX_ROW}`]
         },
-        bookList: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: SCHEMA_NAME.BOOKS
-            }
-        ],
+        // bookList: [
+        //     {
+        //         type: Schema.Types.ObjectId,
+        //         ref: SCHEMA_NAME.BOOKS
+        //     }
+        // ],
         floor: {
             type: Schema.Types.ObjectId,
             ref: SCHEMA_NAME.FLOORS

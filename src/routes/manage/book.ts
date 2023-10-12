@@ -14,7 +14,7 @@ const toId = Types.ObjectId
 
 // CREATE CATEGORY
 router.post(
-    "/create-category",
+    "/category",
     mustHaveFields<IBookCategory>("name", "row"),
     doNotAllowFields<IBookCategory>("popularity"),
     async (req: Request, res: Response) => {
@@ -40,7 +40,7 @@ router.post(
 
 // EDIT CATEGORY
 router.put(
-    "/edit-category/:category_id",
+    "/category/:category_id",
     doNotAllowFields<IBookCategory>("popularity"),
     async (req: Request, res: Response) => {
         try {
@@ -63,6 +63,16 @@ router.put(
         }
     }
 )
+
+// GET ALL CATEGORIES
+router.get("/category", async (req: Request, res: Response) => {
+    try {
+        const categories = await BookCategory.find({}).populate("row")
+        res.json({ success: true, data: categories })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 // CREATE BOOK
 router.post(
@@ -233,5 +243,15 @@ router.post(
         }
     }
 )
+
+// GET PREORDER BOOKS
+router.get("/pre-order", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const preOrderBooks = await PreOrderBook.find({}).populate("preOrderBookDetails")
+        res.json({ success: true, data: preOrderBooks })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 export default router

@@ -1,16 +1,19 @@
 import { configDotenv } from "dotenv"
 import { CloudinaryStorage } from "multer-storage-cloudinary"
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const cloudinary = require("cloudinary").v2
+import cloudinary from "cloudinary"
+
 configDotenv()
-cloudinary.config({
+const cloudinaryV2 = cloudinary.v2
+cloudinaryV2.config({
     cloud_name: process.env.CLOUDINARY_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 })
 
+export { cloudinaryV2 as cloudinaryAPI }
+
 const storage = new CloudinaryStorage({
-    cloudinary,
+    cloudinary: cloudinaryV2,
     params: {
         folder: "BOOKSTORE",
         allowed_formats: ["jpg", "png", "jpeg"],

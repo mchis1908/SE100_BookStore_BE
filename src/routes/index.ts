@@ -16,6 +16,7 @@ import {
     trashRouter
 } from "./manage"
 import { clientBookRouter, customerRouter, invoiceRouter } from "./client"
+import { imageUpload } from "./image-server"
 
 export default function getRoutes(app: Express) {
     app.use("/api", rootRouter)
@@ -35,4 +36,6 @@ export default function getRoutes(app: Express) {
     app.use("/api/book", clientBookRouter)
     app.use("/api/invoice", invoiceRouter)
     app.use("/api/customer", customerRouter)
+
+    app.use("/image-server", imageUpload)
 }

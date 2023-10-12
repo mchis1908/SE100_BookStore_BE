@@ -4,7 +4,7 @@ const mustHaveFields =
     <T = string>(...fields: (keyof T)[]) =>
     (req: Request, res: Response, next: NextFunction) => {
         const body = req.body
-        const leftFields = []
+        const leftFields: any[] = []
         for (const field of fields) {
             if (body[field] === undefined || body[field] === null) {
                 leftFields.push(field)

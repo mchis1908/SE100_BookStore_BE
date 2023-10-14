@@ -1,9 +1,8 @@
 import { Request, Response, Router } from "express"
-import { ProblemReport, Voucher } from "../../models"
 import { PaginateOptions } from "mongoose"
 import verifyRole from "../../middleware/verifyRole"
-import { IProblemReport } from "../../interface"
 import mustHaveFields from "../../middleware/must-have-field"
+import { Voucher } from "../../models"
 
 const router = Router()
 
@@ -30,21 +29,4 @@ router.get("/used-vouchers", verifyRole(), async (req: Request, res: Response) =
         res.status(500).json({ success: false, message: error.message })
     }
 })
-
-// SEND PROBLEM
-router.post(
-    "/send-problem",
-    mustHaveFields<IProblemReport>("announcer", "description", "images", "reportingLocation", "title"),
-    async (req: Request, res: Response) => {
-        try {
-            await ProblemReport.create({
-                ...req.body
-            })
-            res.json({ success: true, message: "Problem sent successfully" })
-        } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message })
-        }
-    }
-)
-
 export default router

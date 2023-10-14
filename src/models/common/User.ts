@@ -47,6 +47,10 @@ const UserShema = new Schema<IUser>(
         isDeleted: {
             type: Boolean,
             default: false
+        },
+        isEmailVerified: {
+            type: Boolean,
+            default: false
         }
     },
     {

@@ -70,7 +70,6 @@ router.put(
             credential.password = hashedPassword
 
             await credential.save()
-
             res.json({ success: true, message: "Success" })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })

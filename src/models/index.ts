@@ -9,14 +9,12 @@ import BookCategory from "./book/BookCategory"
 import ExchangeAndReturn from "./book/ExchangeAndReturn"
 import Invoice from "./book/Invoice"
 import InvoiceDetail from "./book/InvoiceDetails"
-import DiscountBook from "./discount/DiscountBook"
 import DiscountEvent from "./discount/DiscountEvent"
 import Voucher from "./discount/Voucher"
 import Expense from "./expense/Expense"
 import ExpenseType from "./expense/ExpenseType"
 import PreOrderBook from "./pre-order/PreOrderBook"
 import PreOrderBookDetail from "./pre-order/PreOrderBookDetails"
-import ProblemReport from "./report/ProblemReport"
 
 export {
     Admin,
@@ -30,12 +28,10 @@ export {
     ExchangeAndReturn,
     Invoice,
     InvoiceDetail,
-    DiscountBook,
     DiscountEvent,
     Voucher,
     Expense,
     ExpenseType,
     PreOrderBook,
-    PreOrderBookDetail,
-    ProblemReport
+    PreOrderBookDetail
 }

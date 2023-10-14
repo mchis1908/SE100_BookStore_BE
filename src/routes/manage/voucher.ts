@@ -5,12 +5,29 @@ import mustHaveFields from "../../middleware/must-have-field"
 import { Customer, User, Voucher } from "../../models"
 import doNotAllowFields from "../../middleware/not-allow-field"
 import voucherCode from "voucher-code-generator"
-import { Types } from "mongoose"
-import { sendMail } from "../../service/mailer"
+import { PaginateOptions, Types } from "mongoose"
 import { sendVoucher } from "../../template/mail"
 
 const router = Router()
 const toId = Types.ObjectId
+
+// GET ALL VOUCHERS
+router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const { page, limit } = req.query
+        const options: PaginateOptions = {
+            page: parseInt(page as string, 10) || 1,
+            limit: parseInt(limit as string, 10) || 10
+        }
+        await Voucher.paginate({}, options, (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: err.message })
+            const { docs, ...rest } = result
+            return res.json({ success: true, data: docs, ...rest })
+        })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 // CREATE VOUCHER
 router.post(
@@ -54,7 +71,7 @@ router.post(
             }).select("email")
             const emails = customerEmails.map((user) => user.email)
             for (const email of emails) {
-                await sendVoucher(email, voucher)
+                sendVoucher({ email, voucher })
             }
 
             res.status(201).json({ success: true, message: "Voucher created successfully", voucher })

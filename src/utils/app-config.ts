@@ -31,6 +31,7 @@ function config(express: any) {
     app.use(express.urlencoded({ extended: true, limit: "50mb" }))
 
     app.use(express.json({ limit: "50mb" })) // we dont need to use body parser anymore because express has it built in
+    app.set("view engine", "ejs")
     return app
 }
 

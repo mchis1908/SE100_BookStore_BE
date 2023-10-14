@@ -1,6 +1,7 @@
 import manageEmployeeRouter from "./user/employee"
 import manageCustomerRouter from "./user/customer"
-import manageBookstoreRouter from "./bookstore"
+import manageBookstoreRouter from "./bookstore/bookstore"
+import eventRouter from "./bookstore/event"
 import manageBookRouter from "./book"
 import manageOrderRouter from "./order"
 import manageVoucherRouter from "./voucher"
@@ -13,6 +14,7 @@ export {
     manageEmployeeRouter,
     manageCustomerRouter,
     manageBookstoreRouter,
+    eventRouter,
     manageBookRouter,
     manageOrderRouter,
     manageVoucherRouter,

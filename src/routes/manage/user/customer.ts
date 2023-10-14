@@ -78,18 +78,21 @@ router.put(
 // GET ALL CUSTOMERS
 router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
     try {
-        const { page, limit } = req.query
+        const { page, limit, search_q, isDeleted, sort, sort_by } = req.query
+        const sortByArr = sort_by?.toString().split(",") || []
         const options: PaginateOptions = {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
             populate: {
                 path: "user"
-            }
+            },
+            sort: { ...(sort_by ? Object.fromEntries(sortByArr.map((item) => [item, sort === "asc" ? 1 : -1])) : {}) }
         }
         await User.paginate(
             {
                 role: EUserRole.CUSTOMER,
-                isDeleted: false
+                isDeleted: isDeleted === "true" ? true : false,
+                $or: search_q ? [{ name: { $regex: search_q as string, $options: "i" } }] : [{}]
             },
             options,
             (err, result) => {

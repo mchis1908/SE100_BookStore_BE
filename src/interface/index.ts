@@ -11,14 +11,12 @@ import ICustomer, { ERank } from "./common/ICustomer"
 import IEmployee from "./common/IEmployee"
 import IUser, { EUserRole } from "./common/IUser"
 import SCHEMA_NAME from "./common/schema-name"
-import IDiscountBook from "./discount/IDiscountBook"
 import IDiscountEvent from "./discount/IDiscountEvent"
 import IVoucher from "./discount/IVoucher"
 import IExpense from "./expense/IExpense"
 import IExpenseType from "./expense/IExpenseType"
 import IPreOrderBook from "./pre-order/IPreOrderBook"
 import IPreOrderBookDetail from "./pre-order/IPreOrderBookDetail"
-import IProblemReport from "./report/IProblemReport"
 
 export {
     ERank,
@@ -28,7 +26,6 @@ export {
     IBookCategory,
     ICredential,
     ICustomer,
-    IDiscountBook,
     IDiscountEvent,
     IEmployee,
     IExchangeAndReturn,
@@ -39,7 +36,6 @@ export {
     IInvoiceDetail,
     IPreOrderBook,
     IPreOrderBookDetail,
-    IProblemReport,
     IRow,
     IUser,
     IVoucher,

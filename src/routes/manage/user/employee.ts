@@ -55,6 +55,34 @@ router.post(
     }
 )
 
+// EDIT EMPLOYEE
+router.put("/:employee_id", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const { employee_id } = req.params
+        if (!employee_id) return res.status(400).json({ success: false, message: "Missing employee_id" })
+        const user = await User.findOne({ user: employee_id })
+        if (!user) return res.status(400).json({ success: false, message: "Employee not found" })
+        if (user.role !== EUserRole.EMPLOYEE)
+            return res.status(400).json({ success: false, message: "This is not an employee" })
+        const employee = await Employee.findById(user.user)
+        if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
+        await employee.updateOne({
+            $set: {
+                ...req.body
+            }
+        })
+        await user.updateOne({
+            $set: {
+                ...req.body
+            }
+        })
+
+        res.json({ success: true, message: "Employee updated successfully" })
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
+
 // EDIT EMPLOYEE INFO
 router.put(
     "/edit-info/:employee_id",
@@ -105,26 +133,6 @@ router.put(
     }
 )
 
-// EDIT EMPLOYEE SALARY SCALE
-router.put("/edit-salary-scale/:employee_id", verifyRole(["admin"]), async (req: Request, res: Response) => {
-    try {
-        const { employee_id } = req.params
-        const { salaryScale } = req.body
-        const employee = await Employee.findById(employee_id)
-        if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
-        const _salaryScale = await SalaryScale.findById(salaryScale)
-        if (!_salaryScale) return res.status(400).json({ success: false, message: "Salary scale not found" })
-        await employee.updateOne({
-            $set: {
-                salaryScale
-            }
-        })
-        res.json({ success: true, message: "Employee updated successfully" })
-    } catch (error: any) {
-        return res.status(500).json({ success: false, message: error.message })
-    }
-})
-
 // GET ALL EMPLOYEES
 router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
     try {
@@ -152,7 +160,7 @@ router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
                               "user.salaryScale.coefficient": { $regex: search_q as string, $options: "i" }
                           }
                       ]
-                    : []
+                    : [{}]
             },
             options,
             (err, result) => {

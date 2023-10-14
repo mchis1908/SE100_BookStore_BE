@@ -1,5 +1,5 @@
 import { Types } from "mongoose"
-import IDiscountBook from "./IDiscountBook"
+import IBook from "../book/IBook"
 
 export default interface IDiscountEvent {
     name: string
@@ -8,5 +8,5 @@ export default interface IDiscountEvent {
     image: string
     description: string
     eventDiscountValue: number
-    discountBooks: Types.ObjectId | IDiscountBook[]
+    discountBooks: Types.ObjectId[] | IBook[]
 }

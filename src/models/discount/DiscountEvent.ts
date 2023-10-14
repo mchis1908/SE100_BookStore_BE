@@ -11,7 +11,7 @@ const DiscountEventSchema = new Schema<IDiscountEvent>(
         discountBooks: [
             {
                 type: Schema.Types.ObjectId,
-                ref: SCHEMA_NAME.DISCOUNT_BOOKS
+                ref: SCHEMA_NAME.BOOKS
             }
         ],
         description: {
@@ -19,7 +19,8 @@ const DiscountEventSchema = new Schema<IDiscountEvent>(
         },
         startAt: {
             type: Date,
-            required: [true, "Start date is required"]
+            required: [true, "Start date is required"],
+            min: [new Date(), "Start date must be after current date"]
         },
         endAt: {
             type: Date,

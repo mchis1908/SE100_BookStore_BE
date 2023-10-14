@@ -127,12 +127,21 @@ router.post(
 )
 
 // EDIT BOOK
-// router.put("/edit-book", async (req: Request, res: Response) => {
-//     try {
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message })
-//     }
-// })
+router.put("/:book_id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const { book_id } = req.params
+        if (!book_id) {
+            return res.status(400).json({ success: false, message: "Missing book_id" })
+        }
+        const book = await Book.findOneAndUpdate({ _id: book_id }, { $set: { ...req.body } }, { new: true })
+        if (!book) {
+            return res.status(400).json({ success: false, message: `Book ${book_id} does not exist` })
+        }
+        res.json({ success: true, message: "Book updated successfully", data: book })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
 
 // IMPORT BOOK
 router.post(

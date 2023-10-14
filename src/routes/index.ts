@@ -4,6 +4,7 @@ import rootRouter from "./root"
 import userRouter from "./user"
 
 import {
+    eventRouter,
     expenseRouter,
     expenseTypeRouter,
     manageBookRouter,
@@ -25,6 +26,7 @@ export default function getRoutes(app: Express) {
     app.use("/api/manage/employee", manageEmployeeRouter)
     app.use("/api/manage/customer", manageCustomerRouter)
     app.use("/api/manage/bookstore", manageBookstoreRouter)
+    app.use("/api/manage/bookstore/event", eventRouter)
     app.use("/api/manage/book", manageBookRouter)
     app.use("/api/manage/order", manageOrderRouter)
     app.use("/api/manage/voucher", manageVoucherRouter)

@@ -1,13 +1,14 @@
 import { NextFunction, Request, Response, Router } from "express"
 import { Types } from "mongoose"
 import { ERank, ICustomer, IInvoice, IInvoiceDetail, IUser } from "../../interface"
-import { EINVOICE_TYPE } from "../../interface/book/IInvoice"
+import { EINVOICE_TYPE, IUserInvoice } from "../../interface/book/IInvoice"
 import mustHaveFields from "../../middleware/must-have-field"
 import verifyRole from "../../middleware/verifyRole"
 import { Book, Customer, Invoice, User, Voucher } from "../../models"
 import InvoiceDetails from "../../models/book/InvoiceDetails"
 import UserInvoice from "../../models/book/UserInvoice"
 import { GOLD_REACH_POINT, PLATINUM_REACH_POINT, POINT_RANKING, SILVER_REACH_POINT } from "../../utils/common"
+import { sendOrderInvoice } from "../../template/mail"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -119,7 +120,40 @@ router.post(
                 customer: _customer._id
             })
 
-            res.status(201).json({ success: true, message: "Order created successfully", data: newInvoice })
+            const _newInvoice = await Invoice.findById(newInvoice._id, undefined, {
+                populate: [
+                    {
+                        path: "invoiceDetails",
+                        populate: {
+                            path: "book",
+                            select: "name author salesPrice"
+                        }
+                    },
+                    {
+                        path: "customer",
+                        select: "name phoneNumber address email"
+                    },
+                    {
+                        path: "employee",
+                        select: "name phoneNumber"
+                    },
+                    {
+                        path: "invoice",
+                        populate: {
+                            path: "vouchers",
+                            select: "name discountValue code"
+                        }
+                    }
+                ]
+            })
+
+            sendOrderInvoice({ email: _customer.email, invoice: _newInvoice as IInvoice<IUserInvoice> })
+
+            res.status(201).json({
+                success: true,
+                message: "Order created successfully",
+                data: _newInvoice
+            })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
         }

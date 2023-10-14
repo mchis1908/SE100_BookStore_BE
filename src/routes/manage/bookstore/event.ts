@@ -1,9 +1,10 @@
 import { Request, Response, Router } from "express"
-import { Book, DiscountEvent } from "../../../models"
+import { Book, DiscountEvent, User } from "../../../models"
 import verifyRole from "../../../middleware/verifyRole"
 import mustHaveFields from "../../../middleware/must-have-field"
-import { IDiscountEvent } from "../../../interface"
+import { EUserRole, IDiscountEvent } from "../../../interface"
 import { PaginateOptions } from "mongoose"
+import { sendNewEvent } from "../../../template/mail"
 
 const router = Router()
 
@@ -29,6 +30,12 @@ router.post(
                     }
                 }
             )
+            const customers = await User.find({
+                role: EUserRole.CUSTOMER
+            }).select("email")
+            for (const customer of customers) {
+                sendNewEvent(customer.email, newEvent)
+            }
             res.json({ success: true, message: "Event created successfully", data: newEvent })
         } catch (error: any) {
             return res.status(500).json({ success: false, message: error.message })

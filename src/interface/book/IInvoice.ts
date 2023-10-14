@@ -27,4 +27,5 @@ export default interface IInvoice<T = IUserInvoice | IImportInvoice> {
     invoice: Types.ObjectId | T
     type: EINVOICE_TYPE
     customer: string | Types.ObjectId | IUser
+    createdAt: Date
 }

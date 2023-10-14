@@ -15,7 +15,10 @@ const VoucherSchema = new Schema<IVoucher>(
             }
         ],
         discountValue: {
-            type: Number
+            type: Number,
+            default: 0,
+            min: [0, "Discount value must be greater than or equal to 0"],
+            max: [1, "Discount value must be less than or equal to 1"]
         },
         expirationDate: {
             type: Date,

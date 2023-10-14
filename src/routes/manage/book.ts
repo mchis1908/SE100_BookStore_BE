@@ -108,7 +108,7 @@ router.post(
                     $set: {
                         ...req.body,
                         quantity: book.quantity + req.body.quantity,
-                        salesPrice: req.body.importPrice * 1.05
+                        salesPrice: Number(req.body.importPrice) * 1.05
                     }
                 })
             } else {
@@ -116,10 +116,11 @@ router.post(
                     return res.status(400).json({ success: false, message: `Maximum quantity is ${MAX_BOOK_QUANTITY}` })
                 }
                 newBook = await Book.create({
-                    ...req.body
+                    ...req.body,
+                    salesPrice: Number(req.body.importPrice) * 1.05
                 })
             }
-            res.status(201).json({ success: true, message: "Book created successfully", newBook })
+            res.status(201).json({ success: true, message: "Book created successfully" })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
         }

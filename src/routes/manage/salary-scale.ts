@@ -66,6 +66,16 @@ router.delete("/:salary_scale_id", verifyRole(["admin"]), async (req: Request, r
         const { salary_scale_id } = req.params
         const salaryScale = await SalaryScale.findById(salary_scale_id)
         if (!salaryScale) return res.status(400).json({ success: false, message: "Salary scale does not exist" })
+        const currentSalaryScaleIndex = salaryScale.index
+        await SalaryScale.updateMany(
+            { index: { $gt: currentSalaryScaleIndex } },
+            {
+                $inc: {
+                    index: -1
+                }
+            }
+        )
+
         await salaryScale.deleteOne()
         res.json({ success: true, message: "Salary scale deleted successfully" })
     } catch (error: any) {

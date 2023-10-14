@@ -8,6 +8,8 @@ import bcrypt from "bcryptjs"
 import Credential from "../../../models/common/Credential"
 import { PaginateOptions } from "mongoose"
 import SalaryScale from "../../../models/common/SalaryScale"
+import { sendNewAccountCreated, sendSalaryChange, sendSalaryScaleChange } from "../../../template/mail"
+import { ISalaryScale } from "../../../interface/common/IEmployee"
 
 const router = Router()
 
@@ -41,12 +43,16 @@ router.post(
 
             await newUser.save()
 
+            newUser.password = password
+
             const bcryptPassword = await bcrypt.hash(password, 10)
             const newCredential = new Credential({
                 user_id: newUser._id,
                 password: bcryptPassword
             })
             await newCredential.save()
+
+            sendNewAccountCreated({ email: newUser.email, user: newUser })
 
             res.json({ success: true, message: "Employee created successfully" })
         } catch (error: any) {
@@ -64,8 +70,25 @@ router.put("/:employee_id", verifyRole(["admin"]), async (req: Request, res: Res
         if (!user) return res.status(400).json({ success: false, message: "Employee not found" })
         if (user.role !== EUserRole.EMPLOYEE)
             return res.status(400).json({ success: false, message: "This is not an employee" })
-        const employee = await Employee.findById(user.user)
+        const employee = await Employee.findById(user.user).populate("salaryScale")
         if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
+        const { salary, salaryScale } = req.body
+        if (salary) {
+            if (employee.salary != salary) {
+                sendSalaryChange({ email: user.email, oldSalary: employee.salary, newSalary: salary })
+            }
+        }
+        if (salaryScale) {
+            const salaryScaleObj = await SalaryScale.findById(salaryScale)
+            if (!salaryScaleObj) return res.status(400).json({ success: false, message: "Salary scale not found" })
+            if (salaryScale != employee.salaryScale) {
+                sendSalaryScaleChange({
+                    email: user.email,
+                    oldSalaryScale: employee.salaryScale as ISalaryScale,
+                    newSalaryScale: salaryScaleObj
+                })
+            }
+        }
         await employee.updateOne({
             $set: {
                 ...req.body
@@ -147,7 +170,11 @@ router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
                     path: "salaryScale"
                 }
             },
-            sort: { ...(sort_by ? Object.fromEntries(sortByArr.map((item) => [item, sort === "asc" ? 1 : -1])) : {}) }
+            sort: {
+                ...(sort_by
+                    ? Object.fromEntries(sortByArr.map((item) => [item, !sort || sort === "asc" ? 1 : -1]))
+                    : {})
+            }
         }
         await User.paginate(
             {

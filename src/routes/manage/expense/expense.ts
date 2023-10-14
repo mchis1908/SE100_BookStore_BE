@@ -1,11 +1,11 @@
 import { Request, Response, Router } from "express"
+import { Types } from "mongoose"
 import { EUserRole, IExpense } from "../../../interface"
 import { EExpenseStatus } from "../../../interface/expense/IExpense"
 import mustHaveFields from "../../../middleware/must-have-field"
 import doNotAllowFields from "../../../middleware/not-allow-field"
 import verifyRole from "../../../middleware/verifyRole"
 import { Expense, ExpenseType, User } from "../../../models"
-import { Types } from "mongoose"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -33,6 +33,7 @@ router.post(
                 statusUpdatedAt: new Date(),
                 statusUpdatedBy: req.user_id
             } as IExpense)
+
             res.status(201).json({ success: true, message: "Expense created successfully", data: newExpense })
         } catch (error: any) {
             return res.status(500).json({ success: false, message: error.message })

@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs"
 import Credential from "../../../models/common/Credential"
 import doNotAllowFields from "../../../middleware/not-allow-field"
 import { PaginateOptions } from "mongoose"
+import { sendNewAccountCreated } from "../../../template/mail"
 
 const router = Router()
 
@@ -33,7 +34,7 @@ router.post(
                 role: EUserRole.CUSTOMER
             })
 
-            await newCustomer.save()
+            newUser.password = password
 
             const bcryptPassword = await bcrypt.hash(password, 10)
             const newCredential = new Credential({
@@ -42,6 +43,7 @@ router.post(
             })
             await newCredential.save()
 
+            sendNewAccountCreated({ email: newUser.email, user: newUser })
             res.json({ success: true, message: "Customer created successfully" })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
@@ -86,7 +88,11 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
             populate: {
                 path: "user"
             },
-            sort: { ...(sort_by ? Object.fromEntries(sortByArr.map((item) => [item, sort === "asc" ? 1 : -1])) : {}) }
+            sort: {
+                ...(sort_by
+                    ? Object.fromEntries(sortByArr.map((item) => [item, !sort || sort === "asc" ? 1 : -1]))
+                    : {})
+            }
         }
         await User.paginate(
             {

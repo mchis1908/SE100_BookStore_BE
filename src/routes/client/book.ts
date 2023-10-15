@@ -1,13 +1,21 @@
 import { Request, Response, Router } from "express"
-import { Book, BookCategory } from "../../models"
-import { IBook } from "../../interface"
+import { Book, BookCategory, DiscountEvent } from "../../models"
 import { PaginateOptions } from "mongoose"
 
 const router = Router()
 
 router.get("/", async (req: Request, res: Response) => {
     try {
-        const { page, limit } = req.query
+        const { search_q, page, limit, category } = req.query
+
+        // UPDATE DISCOUNT VALUE IF DISCOUNT EVENT IS OVER
+        const discountEvent = await DiscountEvent.findOne({
+            startAt: { $lte: new Date() },
+            endAt: { $gte: new Date() }
+        })
+        if (!discountEvent) {
+            await Book.updateMany({ discountValue: { $gte: 0 } }, { $set: { discountValue: 0 } }, { new: true })
+        }
         const options: PaginateOptions = {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
@@ -16,51 +24,41 @@ router.get("/", async (req: Request, res: Response) => {
                 select: "name"
             }
         }
-        await Book.paginate({}, options, (err, result) => {
-            if (err) return res.status(500).json({ success: false, message: err.message })
-            const { docs, ...rest } = result
-            res.json({ success: true, data: docs, ...rest })
-        })
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message })
-    }
-})
 
-router.get("/search", async (req: Request, res: Response) => {
-    try {
-        const { keyword, filter, from, to } = req.query
-        const queries = ["category", "author", "name", "salesPrice"]
-        if (!filter) return res.status(400).json({ success: false, message: "Missing filter" })
-        if (!queries.includes(filter.toString()))
-            return res.status(400).json({ success: false, message: "Invalid filter" })
-        if (filter !== "salesPrice" && !keyword)
-            return res.status(400).json({ success: false, message: "Missing keyword" })
-        if (filter === "salesPrice" && (!from || !to))
-            return res.status(400).json({ success: false, message: "Missing from or to" })
-        let books = [] as IBook[]
-        if (filter === "category") {
-            // FILTER BY category
-            books = await Book.find({
-                categories: {
-                    $in: await BookCategory.find({ name: { $regex: keyword as string, $options: "i" } }).select("_id")
-                }
-            }).populate("categories", "name")
-        } else {
-            // FILTER BY author, name, salesPrice
-            books = await Book.find(
-                filter === "salesPrice"
-                    ? {
-                          salesPrice: {
-                              $gte: parseInt(from as string),
-                              $lte: parseInt(to as string)
-                          }
-                      }
-                    : {
-                          [filter.toString()]: { $regex: keyword as string, $options: "i" }
-                      }
-            ).populate("categories", "name")
-        }
-        res.status(200).json({ success: true, data: books })
+        const parseValueInt = parseInt(search_q as string)
+        const parseValueFloat = parseFloat(search_q as string)
+
+        await Book.paginate(
+            search_q && search_q !== "0"
+                ? {
+                      $and: [
+                          {
+                              $or: parseValueInt
+                                  ? [{ salesPrice: parseInt(search_q as string) }]
+                                  : parseValueFloat
+                                  ? [{ discountValue: parseFloat(search_q as string) }]
+                                  : [
+                                        { name: { $regex: search_q as string, $options: "i" } },
+                                        { author: { $regex: search_q as string, $options: "i" } },
+                                        { publisher: { $regex: search_q as string, $options: "i" } },
+                                        { barcode: { $regex: search_q as string, $options: "i" } }
+                                    ]
+                          },
+                          category
+                              ? {
+                                    categories: { $in: [category] }
+                                }
+                              : {}
+                      ]
+                  }
+                : {},
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            }
+        )
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }
@@ -89,4 +87,5 @@ router.get("/:id", async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: error.message })
     }
 })
+
 export default router

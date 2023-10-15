@@ -69,7 +69,6 @@ const BookSchema = new Schema<IBook>(
         timestamps: true
     }
 )
-
 BookSchema.plugin(mongooseePaginate)
 
 export default model<IBook, PaginateModel<IBook>>(SCHEMA_NAME.BOOKS, BookSchema, SCHEMA_NAME.BOOKS)

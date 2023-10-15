@@ -1,13 +1,11 @@
 import { Request, Response, Router } from "express"
+import { PaginateOptions, Types } from "mongoose"
+import { IBook, IBookCategory, IInvoiceDetail, IPreOrderBook, IPreOrderBookDetail } from "../../interface"
 import mustHaveFields from "../../middleware/must-have-field"
-import { IBook, IBookCategory, IInvoiceDetail, IPreOrderBook, IPreOrderBookDetail, SCHEMA_NAME } from "../../interface"
-import { Book, BookCategory, Invoice, InvoiceDetail, PreOrderBook, PreOrderBookDetail, Row, User } from "../../models"
 import doNotAllowFields from "../../middleware/not-allow-field"
-import { MAX_BOOK_QUANTITY } from "../../utils/common"
 import verifyRole from "../../middleware/verifyRole"
-import { EINVOICE_TYPE, IImportInvoice } from "../../interface/book/IInvoice"
-import { Types } from "mongoose"
-import ImportInvoice from "../../models/book/ImportInvoice"
+import { Book, BookCategory, PreOrderBook, PreOrderBookDetail, Row, User } from "../../models"
+import { MAX_BOOK_QUANTITY } from "../../utils/common"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -67,8 +65,27 @@ router.put(
 // GET ALL CATEGORIES
 router.get("/category", async (req: Request, res: Response) => {
     try {
-        const categories = await BookCategory.find({}).populate("row")
-        res.json({ success: true, data: categories })
+        const { page, limit, search_q } = req.query
+        const options: PaginateOptions = {
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+            populate: {
+                path: "row"
+            }
+        }
+        await BookCategory.paginate(
+            search_q
+                ? {
+                      name: { $regex: search_q as string, $options: "i" }
+                  }
+                : {},
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            }
+        )
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }
@@ -148,15 +165,15 @@ router.put("/:book_id", verifyRole(["admin", "employee"]), async (req: Request, 
 router.post(
     "/import",
     verifyRole(["admin", "employee"]),
-    mustHaveFields("books", "supplier"),
+    mustHaveFields("books"),
     async (req: Request, res: Response) => {
         try {
-            const { books, supplier, note, total } = req.body
+            const { books } = req.body
             if (books instanceof Array === false) {
                 return res.status(400).json({ success: false, message: "Books must be an array" })
             }
 
-            const invoiceDetailsPromise = (books as IBook[]).map(async (book) => {
+            ;(books as IBook[]).map(async (book) => {
                 const { barcode, quantity } = book
                 const _book = await Book.findOne({ barcode })
                 let newBook
@@ -189,25 +206,7 @@ router.post(
                 return { book: newBookId, quantity } as IInvoiceDetail
             })
 
-            const invoiceDetails = await Promise.all(invoiceDetailsPromise)
-            const newInvoiceDetails = await InvoiceDetail.insertMany(invoiceDetails)
-
-            const importInvoice = await ImportInvoice.create({
-                supplier,
-                importDate: new Date()
-            })
-
-            const invoice = await Invoice.create({
-                employee: new toId(req.user_id),
-                invoiceDetails: newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id),
-                invoice: importInvoice._id,
-                note,
-                total,
-                refPath: SCHEMA_NAME.IMPORT_INVOICES,
-                type: EINVOICE_TYPE.IMPORT
-            })
-
-            res.json({ success: true, message: "Books imported successfully", invoice })
+            res.json({ success: true, message: "Books imported successfully" })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
         }
@@ -218,7 +217,7 @@ router.post(
 router.post(
     "/pre-order",
     verifyRole(["admin", "employee"]),
-    mustHaveFields<IPreOrderBook>("customer", "deposit", "expirationDate", "preOrderBookDetails"),
+    mustHaveFields<IPreOrderBook>("customer", "expirationDate", "preOrderBookDetails"),
     async (req: Request, res: Response) => {
         try {
             const { customer, expirationDate, preOrderBookDetails } = req.body as IPreOrderBook
@@ -233,7 +232,7 @@ router.post(
             const preOrderBookDetailsPromise = (preOrderBookDetails as IPreOrderBookDetail[]).map(
                 async ({ book, quantity }) => {
                     const newPreOrderDetail = await PreOrderBookDetail.create({
-                        book,
+                        book: new toId(book.toString()),
                         quantity
                     })
                     return newPreOrderDetail._id
@@ -241,11 +240,10 @@ router.post(
             )
 
             const newPreOrderBookDetails = await Promise.all(preOrderBookDetailsPromise)
-
             const preOrderBook = await PreOrderBook.create({
+                ...req.body,
                 employee: new toId(req.user_id),
-                preOrderBookDetails: newPreOrderBookDetails,
-                ...req.body
+                preOrderBookDetails: newPreOrderBookDetails
             })
             res.status(201).json({ success: true, message: "Pre-order book created successfully", preOrderBook })
         } catch (error: any) {
@@ -257,8 +255,74 @@ router.post(
 // GET PREORDER BOOKS
 router.get("/pre-order", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const preOrderBooks = await PreOrderBook.find({}).populate("preOrderBookDetails")
-        res.json({ success: true, data: preOrderBooks })
+        const options: PaginateOptions = {
+            page: Number(req.query.page) || 1,
+            limit: Number(req.query.limit) || 10
+        }
+        await PreOrderBook.paginate({}, options, (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: err.message })
+            const { docs, ...rest } = result
+            res.json({ success: true, data: docs, ...rest })
+        })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
+
+// GET CUSTOMER's PREORDER BOOKS
+router.get(
+    "/pre-order/customer/:customer_id",
+    verifyRole(["admin", "employee"]),
+    async (req: Request, res: Response) => {
+        try {
+            const { customer_id } = req.params
+            const options: PaginateOptions = {
+                page: Number(req.query.page) || 1,
+                limit: Number(req.query.limit) || 10
+            }
+            await PreOrderBook.paginate({ customer: customer_id }, options, (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            })
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message })
+        }
+    }
+)
+
+// GET PREORDER BOOK BY ID
+router.get("/pre-order/:id", verifyRole(), async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const preOrderBook = await PreOrderBook.findById(id, undefined, {
+            populate: {
+                path: "preOrderBookDetails",
+                populate: {
+                    path: "book",
+                    select: "name author publisher"
+                }
+            }
+        })
+        res.json({ success: true, data: preOrderBook })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
+
+// DELETE BOOK
+router.delete("/:book_id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const { book_id } = req.params
+        if (!book_id) {
+            return res.status(400).json({ success: false, message: "Missing book_id" })
+        }
+        const book = await Book.findById(book_id)
+        if (!book) {
+            return res.status(400).json({ success: false, message: `Book ${book_id} does not exist` })
+        }
+        await book.deleteOne()
+        res.json({ success: true, message: "Book deleted successfully" })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

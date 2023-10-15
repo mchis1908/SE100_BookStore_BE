@@ -12,10 +12,6 @@ const PreOrderBookSchema = new Schema<IPreOrderBook>(
             type: Schema.Types.ObjectId,
             ref: SCHEMA_NAME.USERS
         },
-        deposit: {
-            type: Number,
-            default: 0
-        },
         expirationDate: {
             type: Date,
             default: new Date()

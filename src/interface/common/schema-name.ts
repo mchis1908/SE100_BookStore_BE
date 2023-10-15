@@ -12,8 +12,6 @@ enum SCHEMA_NAME {
     EXCHANGE_AND_RETURNS = "exchange_and_returns",
     INVOICES = "invoices",
     INVOICE_DETAILS = "invoice_details",
-    USER_INVOICES = "user_invoices",
-    IMPORT_INVOICES = "import_invoices",
     DISCOUNT_BOOKS = "discount_books",
     DISCOUNT_EVENTS = "discount_events",
     VOUCHERS = "vouchers",
@@ -22,7 +20,8 @@ enum SCHEMA_NAME {
     PREORDER_BOOKS = "preorder_books",
     PREORDER_BOOK_DETAILS = "preorder_book_details",
     PROBLEM_REPORTS = "problem_reports",
-    SALARY_SCALES = "salary_scales"
+    SALARY_SCALES = "salary_scales",
+    SALARIES = "salaries"
 }
 
 export default SCHEMA_NAME

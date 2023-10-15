@@ -7,6 +7,5 @@ export default interface IPreOrderBook {
     employee: Types.ObjectId | IUser
     expirationDate: Date
     note: string
-    deposit: number
     preOrderBookDetails: Types.ObjectId[] | IPreOrderBookDetail[]
 }

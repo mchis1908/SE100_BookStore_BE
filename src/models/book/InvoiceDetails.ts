@@ -9,6 +9,10 @@ const InvoiceDetailsSchema = new Schema<IInvoiceDetail>(
         },
         quantity: {
             type: Number
+        },
+        invoice: {
+            type: Schema.Types.ObjectId,
+            ref: SCHEMA_NAME.INVOICES
         }
     },
     {

@@ -219,4 +219,42 @@ router.put("/change-salary-scale/:employee_id", verifyRole(["admin"]), async (re
     }
 })
 
+// GET ALL SALARY
+router.get("/salary", verifyRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+        const { page, limit, search_q, isDeleted, sort, sort_by } = req.query
+        const sortByArr = sort_by?.toString().split(",") || []
+        const options: PaginateOptions = {
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+            populate: {
+                path: "user",
+                populate: {
+                    path: "salaryScale"
+                }
+            },
+            sort: {
+                ...(sort_by
+                    ? Object.fromEntries(sortByArr.map((item) => [item, !sort || sort === "asc" ? 1 : -1]))
+                    : {})
+            }
+        }
+        await User.paginate(
+            {
+                isDeleted: isDeleted === "true" ? true : false,
+                $or: search_q ? [{ name: { $regex: search_q as string, $options: "i" } }] : [{}],
+                role: EUserRole.EMPLOYEE
+            },
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                res.json({ success: true, data: docs, ...rest })
+            }
+        )
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
+
 export default router

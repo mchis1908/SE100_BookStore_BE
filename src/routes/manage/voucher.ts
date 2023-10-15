@@ -14,16 +14,24 @@ const toId = Types.ObjectId
 // GET ALL VOUCHERS
 router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const { page, limit } = req.query
+        const { page, limit, level } = req.query
         const options: PaginateOptions = {
             page: parseInt(page as string, 10) || 1,
             limit: parseInt(limit as string, 10) || 10
         }
-        await Voucher.paginate({}, options, (err, result) => {
-            if (err) return res.status(500).json({ success: false, message: err.message })
-            const { docs, ...rest } = result
-            return res.json({ success: true, data: docs, ...rest })
-        })
+        await Voucher.paginate(
+            level
+                ? {
+                      level
+                  }
+                : {},
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                return res.json({ success: true, data: docs, ...rest })
+            }
+        )
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

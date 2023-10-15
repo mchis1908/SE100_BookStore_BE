@@ -24,15 +24,15 @@ const InvoiceSchema = new Schema<IInvoice>(
         note: {
             type: String
         },
-        invoice: {
-            type: Schema.Types.ObjectId,
-            refPath: "refPath"
+        eventDiscountValue: {
+            type: Number
         },
-        refPath: {
-            type: String,
-            required: true,
-            enum: [SCHEMA_NAME.USER_INVOICES, SCHEMA_NAME.IMPORT_INVOICES]
-        }
+        vouchers: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: SCHEMA_NAME.VOUCHERS
+            }
+        ]
     },
     {
         versionKey: false,

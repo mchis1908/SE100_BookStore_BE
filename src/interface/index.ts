@@ -14,9 +14,9 @@ import SCHEMA_NAME from "./common/schema-name"
 import IDiscountEvent from "./discount/IDiscountEvent"
 import IVoucher from "./discount/IVoucher"
 import IExpense from "./expense/IExpense"
-import IExpenseType from "./expense/IExpenseType"
 import IPreOrderBook from "./pre-order/IPreOrderBook"
 import IPreOrderBookDetail from "./pre-order/IPreOrderBookDetail"
+import ISalary from "./common/ISalary"
 
 export {
     ERank,
@@ -30,7 +30,6 @@ export {
     IEmployee,
     IExchangeAndReturn,
     IExpense,
-    IExpenseType,
     IFloor,
     IInvoice,
     IInvoiceDetail,
@@ -39,5 +38,6 @@ export {
     IRow,
     IUser,
     IVoucher,
-    SCHEMA_NAME
+    SCHEMA_NAME,
+    ISalary
 }

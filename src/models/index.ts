@@ -12,7 +12,6 @@ import InvoiceDetail from "./book/InvoiceDetails"
 import DiscountEvent from "./discount/DiscountEvent"
 import Voucher from "./discount/Voucher"
 import Expense from "./expense/Expense"
-import ExpenseType from "./expense/ExpenseType"
 import PreOrderBook from "./pre-order/PreOrderBook"
 import PreOrderBookDetail from "./pre-order/PreOrderBookDetails"
 
@@ -31,7 +30,6 @@ export {
     DiscountEvent,
     Voucher,
     Expense,
-    ExpenseType,
     PreOrderBook,
     PreOrderBookDetail
 }

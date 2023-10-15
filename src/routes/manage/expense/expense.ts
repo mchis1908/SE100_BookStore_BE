@@ -5,7 +5,7 @@ import { EExpenseStatus } from "../../../interface/expense/IExpense"
 import mustHaveFields from "../../../middleware/must-have-field"
 import doNotAllowFields from "../../../middleware/not-allow-field"
 import verifyRole from "../../../middleware/verifyRole"
-import { Expense, ExpenseType, User } from "../../../models"
+import { Expense, User } from "../../../models"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -14,19 +14,17 @@ const toId = Types.ObjectId
 router.post(
     "/create",
     verifyRole(["admin", "employee"]),
-    mustHaveFields<IExpense>("cost", "expenseType", "description"),
+    mustHaveFields<IExpense>("cost", "description"),
     doNotAllowFields<IExpense>("status", "statusUpdatedAt", "statusUpdatedBy"),
     async (req: Request, res: Response) => {
         try {
-            const { expenseType } = req.body
             const currentUser = await User.findById(req.user_id)
             if (!currentUser) return res.status(400).json({ success: false, message: "User not found" })
             let status = EExpenseStatus.PENDING
             if (currentUser.role === EUserRole.ADMIN) {
                 status = EExpenseStatus.RESOLVED
             }
-            const _expenseType = await ExpenseType.findById(expenseType)
-            if (!_expenseType) return res.status(400).json({ success: false, message: "Expense type not found" })
+
             const newExpense = await Expense.create({
                 ...req.body,
                 status,
@@ -46,7 +44,7 @@ router.put(
     "/update-status/:expense_id",
     verifyRole(["admin"]),
     mustHaveFields("status"),
-    doNotAllowFields<IExpense>("cost", "description", "expenseType", "statusUpdatedAt", "statusUpdatedBy"),
+    doNotAllowFields<IExpense>("cost", "description", "statusUpdatedAt", "statusUpdatedBy"),
     async (req: Request, res: Response) => {
         try {
             const { expense_id } = req.params
@@ -102,9 +100,21 @@ router.put(
 // GET ALL EXPENSES
 router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
     try {
-        const { status } = req.query
+        const { lastNDays, date, status, search_q } = req.query
         const expenses = await Expense.find({
-            ...(status && { status })
+            ...(status && { status }),
+            ...(lastNDays && {
+                createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString()))) }
+            }),
+            ...(date && {
+                createdAt: {
+                    $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                    $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                }
+            }),
+            ...(search_q && {
+                $or: [{ description: { $regex: search_q.toString(), $options: "i" } }]
+            })
         })
         res.json({ success: true, data: expenses })
     } catch (error: any) {

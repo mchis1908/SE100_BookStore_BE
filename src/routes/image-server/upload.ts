@@ -12,6 +12,15 @@ router.post("/upload", upload.single("image"), (req: Request, res: Response) => 
     }
 })
 
+router.post("/upload/multiple", upload.array("images"), async (req: Request, res: Response) => {
+    try {
+        const images = (req as any).files.map((file: any) => file.path)
+        return res.json({ images })
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+})
+
 router.delete("/delete", async (req: Request, res: Response) => {
     try {
         const { image } = req.body

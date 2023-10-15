@@ -8,7 +8,7 @@ import manageVoucherRouter from "./voucher"
 import trashRouter from "./trash"
 import salaryScaleRouter from "./salary-scale"
 import expenseRouter from "./expense/expense"
-import expenseTypeRouter from "./expense/expense-type"
+import salaryRouter from "./salary/salary"
 
 export {
     manageEmployeeRouter,
@@ -20,6 +20,6 @@ export {
     manageVoucherRouter,
     trashRouter,
     salaryScaleRouter,
-    expenseTypeRouter,
-    expenseRouter
+    expenseRouter,
+    salaryRouter
 }

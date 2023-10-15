@@ -2,61 +2,144 @@ import { Request, Response, Router } from "express"
 import { SCHEMA_NAME } from "../../interface"
 import verifyRole from "../../middleware/verifyRole"
 import { Invoice } from "../../models"
-import { Types } from "mongoose"
+import { PaginateOptions, Types } from "mongoose"
 
 const router = Router()
 const toId = Types.ObjectId
 
-// GET INVOICES BY TYPE
+// GET INVOICES
 router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const { type } = req.query
-        const types = [SCHEMA_NAME.IMPORT_INVOICES, SCHEMA_NAME.USER_INVOICES] as string[]
-        if (!types.includes(type as string)) {
-            return res.status(400).json({ success: false, message: "type is not valid" })
+        const { page, limit, search_q, lastNDays, date } = req.query
+        const options: PaginateOptions = {
+            page: parseInt(page as string, 10) || 1,
+            limit: parseInt(limit as string, 10) || 10,
+            populate: [
+                {
+                    path: "employee",
+                    select: "name"
+                },
+                {
+                    path: "customer",
+                    select: "name"
+                }
+            ],
+            sort: { createdAt: -1 }
         }
-        const invoices = await Invoice.find({
-            refPath: type
-        }).populate([
-            {
-                path: "employee",
-                select: "name"
-            },
-            {
-                path: "invoice"
-            },
-            {
-                path: "customer",
-                select: "name"
+
+        const parseValueInt = parseInt(search_q as string)
+
+        await Invoice.paginate(
+            search_q && search_q !== "0"
+                ? {
+                      $or:
+                          parseValueInt && !isNaN(parseValueInt)
+                              ? [{ total: parseInt(search_q as string) }]
+                              : [
+                                    { "customer.name": { $regex: search_q as string, $options: "i" } },
+                                    { "employee.name": { $regex: search_q as string, $options: "i" } },
+                                    { "categories.name": { $regex: search_q as string, $options: "i" } }
+                                ],
+                      ...(lastNDays && {
+                          createdAt: {
+                              $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString())))
+                          }
+                      }),
+                      ...(date && {
+                          createdAt: {
+                              $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                              $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                          }
+                      })
+                  }
+                : {
+                      ...(lastNDays && {
+                          createdAt: {
+                              $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString())))
+                          }
+                      }),
+                      ...(date && {
+                          createdAt: {
+                              $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                              $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                          }
+                      })
+                  },
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                return res.json({ success: true, data: docs, ...rest })
             }
-        ])
-        res.json({ success: true, data: invoices })
+        )
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }
 })
 
 // GET CUSTOMER's INVOICES
-router.get("/customer", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/customer/:customer_id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const { customer_id } = req.query
-        if (!customer_id) {
-            return res.status(400).json({ success: false, message: "customer_id is required" })
-        }
-        const invoices = await Invoice.find({
-            customer: new toId(customer_id as string)
-        })
-            .populate([
+        const { customer_id } = req.params
+        const { lastNDays, date, page, limit, search_q } = req.query
+        const options: PaginateOptions = {
+            page: parseInt(page as string, 10) || 1,
+            limit: parseInt(limit as string, 10) || 10,
+            populate: [
                 {
                     path: "employee",
                     select: "name"
-                },
-                {
-                    path: "invoice"
                 }
-            ])
-            .select("-customer")
-        res.json({ success: true, data: invoices })
+            ],
+            sort: { createdAt: -1 }
+        }
+        const parseValueInt = parseInt(search_q as string)
+
+        await Invoice.paginate(
+            search_q && search_q !== "0"
+                ? {
+                      $or:
+                          parseValueInt && !isNaN(parseValueInt)
+                              ? [{ total: parseInt(search_q as string) }]
+                              : [
+                                    { "customer.name": { $regex: search_q as string, $options: "i" } },
+                                    { "employee.name": { $regex: search_q as string, $options: "i" } },
+                                    { "categories.name": { $regex: search_q as string, $options: "i" } }
+                                ],
+                      ...(lastNDays && {
+                          createdAt: {
+                              $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString())))
+                          }
+                      }),
+                      ...(date && {
+                          createdAt: {
+                              $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                              $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                          }
+                      }),
+                      customer: customer_id
+                  }
+                : {
+                      customer: customer_id,
+                      ...(lastNDays && {
+                          createdAt: {
+                              $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString())))
+                          }
+                      }),
+                      ...(date && {
+                          createdAt: {
+                              $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                              $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                          }
+                      })
+                  },
+            options,
+            (err, result) => {
+                if (err) return res.status(500).json({ success: false, message: err.message })
+                const { docs, ...rest } = result
+                return res.json({ success: true, data: docs, ...rest })
+            }
+        )
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }
@@ -65,35 +148,32 @@ router.get("/customer", verifyRole(["admin", "employee"]), async (req: Request, 
 // GET INVOICE BY ID
 router.get("/:id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const invoice = await Invoice.findById(req.params.id).populate("employee", "name")
-        if (!invoice) {
-            return res.status(404).json({ success: false, message: "invoice not found" })
-        }
-        const refPath = invoice.refPath
-        let populateInvoice
-        if (refPath === SCHEMA_NAME.IMPORT_INVOICES) {
-            populateInvoice = await invoice.populate("invoice")
-        } else {
-            populateInvoice = await invoice.populate([
+        const invoice = await Invoice.findById(req.params.id, undefined, {
+            populate: [
                 {
-                    path: "invoice",
-                    populate: [
-                        {
-                            path: "vouchers",
-                            select: "name discountValue"
-                        }
-                    ]
+                    path: "employee",
+                    select: "name"
                 },
                 {
                     path: "customer",
                     select: "name"
+                },
+                {
+                    path: "invoiceDetails",
+                    populate: {
+                        path: "book",
+                        select: "name author salesPrice"
+                    }
                 }
-            ])
+            ]
+        })
+        if (!invoice) {
+            return res.status(404).json({ success: false, message: "invoice not found" })
         }
-        res.json({ success: true, data: populateInvoice })
+
+        res.json({ success: true, data: invoice })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }
 })
-
 export default router

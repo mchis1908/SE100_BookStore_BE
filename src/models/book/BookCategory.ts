@@ -1,5 +1,6 @@
-import { Schema, model } from "mongoose"
+import { PaginateModel, Schema, model } from "mongoose"
 import { IBookCategory, SCHEMA_NAME } from "../../interface"
+import paginate from "mongoose-paginate-v2"
 
 const BookCategorySchema = new Schema<IBookCategory>(
     {
@@ -20,4 +21,10 @@ const BookCategorySchema = new Schema<IBookCategory>(
     }
 )
 
-export default model<IBookCategory>(SCHEMA_NAME.BOOK_CATEGORIES, BookCategorySchema, SCHEMA_NAME.BOOK_CATEGORIES)
+BookCategorySchema.plugin(paginate)
+
+export default model<IBookCategory, PaginateModel<IBookCategory>>(
+    SCHEMA_NAME.BOOK_CATEGORIES,
+    BookCategorySchema,
+    SCHEMA_NAME.BOOK_CATEGORIES
+)

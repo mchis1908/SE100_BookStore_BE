@@ -1,9 +1,8 @@
 import { IBook, IDiscountEvent, IExpense, IInvoice, IInvoiceDetail, IUser, IVoucher } from "../interface"
 import { sendMail } from "../service/mailer"
-import dayjs from "dayjs"
+import moment from "moment"
 import emailContentProvider from "./provider"
 import { ISalaryScale } from "../interface/common/IEmployee"
-import { IUserInvoice } from "../interface/book/IInvoice"
 
 const sendVerifyEmail = async ({ email, verifyToken }: { email: string; verifyToken: string }) => {
     sendMail({
@@ -67,7 +66,7 @@ const sendVoucher = async ({ email, voucher }: { email: string; voucher: IVouche
                 <p>We have a voucher for you</p>
                 <p>Voucher code: <b>${voucher.code}</b></p>
                 <p>Discount value: <b>${voucher.discountValue * 100}%</b></p>
-                <p>Expiration date: <b>${dayjs(voucher.expirationDate, "DD-MM-YYYY hh:mm:ss")}</b></p>
+                <p>Expiration date: <b>${moment(voucher.expirationDate).format("DD-MM-YYYY hh:mm:ss")}</b></p>
             `
         })
     })
@@ -84,7 +83,7 @@ const sendVoucherExpired = async (email: string, voucher: IVoucher) => {
                 <p>Your voucher has expired</p>
                 <p>Voucher code: <b>${voucher.code}</b></p>
                 <p>Discount value: <b>${voucher.discountValue * 100}%</b></p>
-                <p>Expiration date: <b>${dayjs(voucher.expirationDate, "DD-MM-YYYY hh:mm:ss")}</b></p>
+                <p>Expiration date: <b>${moment(voucher.expirationDate).format("DD-MM-YYYY hh:mm:ss")}</b></p>
             `
         })
     })
@@ -101,8 +100,8 @@ const sendNewEvent = async (email: string, event: IDiscountEvent) => {
                 <p>We have a new event for you</p>
                 <p>Event name: <b>${event.name}</b></p>
                 <p>Discount value: <b>${event.eventDiscountValue * 100}%</b></p>
-                <p>Start date: <b>${dayjs(event.startAt, "DD-MM-YYYY hh:mm:ss")}</b></p>
-                <p>End date: <b>${dayjs(event.endAt, "DD-MM-YYYY hh:mm:ss")}</b></p>
+                <p>Start date: <b>${moment(event.startAt).format("DD-MM-YYYY hh:mm:ss")}</b></p>
+                <p>End date: <b>${moment(event.endAt, "DD-MM-YYYY hh:mm:ss")}</b></p>
             `
         })
     })
@@ -171,16 +170,17 @@ const sendSalaryScaleChange = async ({
     })
 }
 
-const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: IInvoice<IUserInvoice> }) => {
+const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: IInvoice }) => {
     let temporaryTotalPrice = 0
     let temporaryDiscountPrice = 0
+    let eventDiscountPrice = 0
     const customer = invoice.customer as IUser
     const employee = invoice.employee as IUser
     await sendMail({
         to: email,
         subject: `[Bookstore] Invoice`,
         html: emailContentProvider({
-            title: "Invoice",
+            title: "Invoice #" + invoice._id,
             children: `
                 <div>
                     <h2>Order of ${customer.name}</h2>
@@ -189,7 +189,7 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                     <b>Email:</b> ${customer.email}<br />
                     <b>Phone number: ${customer.phoneNumber}</b>
                     </p>
-                    <p><b>Invoice Date:</b> ${dayjs(invoice.createdAt, "DD-MM-YYYY hh:mm:ss")}</p>
+                    <p><b>Invoice Date:</b> ${moment(invoice.createdAt).format("llll")}</p>
                     <p><b>Staff:</b> ${employee.name} - ${employee.phoneNumber}</p>
                 </div>
                 <table style="width: 100%">
@@ -208,6 +208,7 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                             const quantity = invoiceDetail.quantity
                             const subtotal = book.salesPrice * quantity
                             temporaryTotalPrice += subtotal
+                            eventDiscountPrice += subtotal * (invoice.eventDiscountValue || 0)
                             return `<tr>
                         <td>${book.name}</td>
                         <td>${quantity}</td>
@@ -222,7 +223,9 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                         <td colspan="3" style="text-align: right">Temporary total price</td>
                         <td>${temporaryTotalPrice}</td>
                     </tr>
-                    <tr>
+                    ${
+                        invoice.vouchers.length > 0
+                            ? `<tr>
                         <td colspan="4" style="text-align: left">
                         Vouchers
                         </td>
@@ -238,27 +241,58 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                             </tr>
                             </thead>
                             <tbody>
-                            ${((invoice.invoice as IUserInvoice).vouchers as IVoucher[])
+                            ${(invoice.vouchers as IVoucher[])
                                 .map((voucher: IVoucher) => {
                                     temporaryDiscountPrice += temporaryTotalPrice * voucher.discountValue
                                     return `<tr>
                                 <td>${voucher.name}</td>
                                 <td>${voucher.code}</td>
-                                <td>${voucher.discountValue % 100}%</td>
+                                <td>${voucher.discountValue * 100}%</td>
                             </tr>`
                                 })
                                 .join("")}
                             </tbody>
                         </table>
                         </td>
+                    </tr>`
+                            : ""
+                    }
+                    ${
+                        invoice.eventDiscountValue
+                            ? `<tr>
+                        <td colspan="4" style="text-align: left">
+                        Discount event
+                        </td>
                     </tr>
-                    <tr style="background-color: #f7f7f7; font-weight: bold">
+                    <tr>
+                        <td colspan="4" style="text-align: right">
+                        <table style="width: 100%">
+                            <thead style="background-color: #f7f7f7;">
+                            <tr>
+                                <th>Discount value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>${invoice.eventDiscountValue * 100}%</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        </td>
+                    </tr>`
+                            : ""
+                    }
+                    ${
+                        invoice.vouchers.length > 0 || invoice.eventDiscountValue
+                            ? `<tr style="background-color: #f7f7f7; font-weight: bold">
                         <td colspan="3" style="text-align: right">Discount price</td>
-                        <td>${temporaryDiscountPrice}</td>
-                    </tr>
+                        <td>${temporaryDiscountPrice} + ${eventDiscountPrice}</td>
+                    </tr>`
+                            : ""
+                    }
                     <tr style="background-color: #f7f7f7; font-weight: bold">
                         <td colspan="3" style="text-align: right">Total</td>
-                        <td>${temporaryTotalPrice - temporaryDiscountPrice}</td>
+                        <td>${temporaryTotalPrice - temporaryDiscountPrice - eventDiscountPrice}</td>
                     </tr>
                     </tfoot>
                 </table>

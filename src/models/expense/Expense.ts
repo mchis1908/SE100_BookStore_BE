@@ -9,10 +9,6 @@ const ExpenseSchema = new Schema<IExpense>(
             type: Schema.Types.ObjectId,
             ref: SCHEMA_NAME.USERS
         },
-        expenseType: {
-            type: Schema.Types.ObjectId,
-            ref: SCHEMA_NAME.EXPENSE_TYPES
-        },
         statusUpdatedAt: {
             type: Date
         },

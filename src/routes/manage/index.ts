@@ -9,6 +9,7 @@ import trashRouter from "./trash"
 import salaryScaleRouter from "./salary-scale"
 import expenseRouter from "./expense/expense"
 import salaryRouter from "./salary/salary"
+import aggregateRouter from "./aggregate"
 
 export {
     manageEmployeeRouter,
@@ -21,5 +22,6 @@ export {
     trashRouter,
     salaryScaleRouter,
     expenseRouter,
-    salaryRouter
+    salaryRouter,
+    aggregateRouter
 }

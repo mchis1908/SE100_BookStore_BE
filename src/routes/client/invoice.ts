@@ -78,7 +78,7 @@ router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Res
 })
 
 // GET CUSTOMER's INVOICES
-router.get("/customer/:customer_id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/customer/:customer_id", verifyRole(), async (req: Request, res: Response) => {
     try {
         const { customer_id } = req.params
         const { lastNDays, date, page, limit, search_q } = req.query
@@ -146,7 +146,7 @@ router.get("/customer/:customer_id", verifyRole(["admin", "employee"]), async (r
 })
 
 // GET INVOICE BY ID
-router.get("/:id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/:id", verifyRole(), async (req: Request, res: Response) => {
     try {
         const invoice = await Invoice.findById(req.params.id, undefined, {
             populate: [

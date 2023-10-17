@@ -115,27 +115,30 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
 // GET TOP 10 CUSTOMERS
 router.get("/top-10", verifyRole(["admin", "employee"]), async (req, res) => {
     try {
-        const { page, limit } = req.query
-        const options: PaginateOptions = {
-            page: Number(page) || 1,
-            limit: Number(limit) || 10,
-            sort: { point: -1 },
-            populate: {
-                path: "user"
-            }
-        }
-        await User.paginate(
+        const users = await User.aggregate([
             {
-                role: EUserRole.CUSTOMER,
-                isDeleted: false
+                $lookup: {
+                    from: "customers",
+                    localField: "user",
+                    foreignField: "_id",
+                    as: "user"
+                }
             },
-            options,
-            (err, result) => {
-                if (err) return res.status(500).json({ success: false, message: err.message })
-                const { docs, ...rest } = result
-                res.json({ success: true, data: docs, ...rest })
-            }
-        )
+            { $unwind: "$user" },
+            {
+                $match: {
+                    role: EUserRole.CUSTOMER,
+                    isDeleted: false
+                }
+            },
+            {
+                $sort: {
+                    "user.point": -1
+                }
+            },
+            { $limit: 10 }
+        ])
+        res.json({ success: true, data: users })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

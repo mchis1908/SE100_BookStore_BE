@@ -111,7 +111,6 @@ router.post(
         try {
             const { barcode, quantity } = req.body
             const book = await Book.findOne({ barcode })
-            let newBook
             if (book) {
                 if (book.quantity + quantity > MAX_BOOK_QUANTITY) {
                     return res.status(400).json({
@@ -121,7 +120,7 @@ router.post(
                         } book can be created left`
                     })
                 }
-                newBook = await book.updateOne({
+                await book.updateOne({
                     $set: {
                         ...req.body,
                         quantity: book.quantity + req.body.quantity,
@@ -132,7 +131,7 @@ router.post(
                 if (quantity > MAX_BOOK_QUANTITY) {
                     return res.status(400).json({ success: false, message: `Maximum quantity is ${MAX_BOOK_QUANTITY}` })
                 }
-                newBook = await Book.create({
+                await Book.create({
                     ...req.body,
                     salesPrice: Number(req.body.importPrice) * 1.05
                 })
@@ -168,45 +167,45 @@ router.post(
     mustHaveFields("books"),
     async (req: Request, res: Response) => {
         try {
+            const doNotExceedBooks = [] as IBook[]
             const { books } = req.body
             if (books instanceof Array === false) {
                 return res.status(400).json({ success: false, message: "Books must be an array" })
             }
 
-            ;(books as IBook[]).map(async (book) => {
+            for (const book of books as IBook[]) {
                 const { barcode, quantity } = book
                 const _book = await Book.findOne({ barcode })
-                let newBook
-                let newBookId
+                let canExceed = true
                 if (_book) {
                     if (_book.quantity + quantity > MAX_BOOK_QUANTITY) {
-                        return res
-                            .status(400)
-                            .json({ success: false, message: `Maximum quantity of book is ${MAX_BOOK_QUANTITY}` })
+                        canExceed = false
+                        doNotExceedBooks.push(_book)
                     }
-                    newBook = await _book.updateOne({
-                        $set: {
-                            ...req.body,
-                            quantity: book.quantity + req.body.quantity,
-                            salesPrice: req.body.importPrice * 1.05
-                        }
-                    })
-                    newBookId = newBook._id
+                    if (canExceed) {
+                        await _book.updateOne({
+                            $set: {
+                                ...book,
+                                quantity: book.quantity + _book.quantity,
+                                salesPrice: book.importPrice * 1.05
+                            }
+                        })
+                    }
                 } else {
                     if (quantity > MAX_BOOK_QUANTITY) {
-                        return res
-                            .status(400)
-                            .json({ success: false, message: `Maximum quantity is ${MAX_BOOK_QUANTITY}` })
+                        canExceed = false
+                        doNotExceedBooks.push(book)
                     }
-                    newBook = await Book.create({
-                        ...book
-                    })
-                    newBookId = newBook._id
+                    if (canExceed) {
+                        await Book.create({
+                            ...book,
+                            salesPrice: Number(book.importPrice) * 1.05
+                        })
+                    }
                 }
-                return { book: newBookId, quantity } as IInvoiceDetail
-            })
+            }
 
-            res.json({ success: true, message: "Books imported successfully" })
+            res.json({ success: true, message: "Books imported successfully", doNotExceedBooks })
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message })
         }

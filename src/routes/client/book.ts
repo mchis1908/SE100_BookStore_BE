@@ -25,24 +25,17 @@ router.get("/", async (req: Request, res: Response) => {
             }
         }
 
-        const parseValueInt = parseInt(search_q as string)
-        const parseValueFloat = parseFloat(search_q as string)
-
         await Book.paginate(
             search_q && search_q !== "0"
                 ? {
                       $and: [
                           {
-                              $or: parseValueInt
-                                  ? [{ salesPrice: parseInt(search_q as string) }]
-                                  : parseValueFloat
-                                  ? [{ discountValue: parseFloat(search_q as string) }]
-                                  : [
-                                        { name: { $regex: search_q as string, $options: "i" } },
-                                        { author: { $regex: search_q as string, $options: "i" } },
-                                        { publisher: { $regex: search_q as string, $options: "i" } },
-                                        { barcode: { $regex: search_q as string, $options: "i" } }
-                                    ]
+                              $or: [
+                                  { name: { $regex: search_q as string, $options: "i" } },
+                                  { author: { $regex: search_q as string, $options: "i" } },
+                                  { publisher: { $regex: search_q as string, $options: "i" } },
+                                  { barcode: { $regex: search_q as string, $options: "i" } }
+                              ]
                           },
                           category
                               ? {

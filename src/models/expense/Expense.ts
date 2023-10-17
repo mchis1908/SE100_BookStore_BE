@@ -22,6 +22,17 @@ const ExpenseSchema = new Schema<IExpense>(
             type: String,
             enum: Object.values(EExpenseStatus),
             default: EExpenseStatus.PENDING
+        },
+        images: {
+            type: [String],
+            default: []
+        },
+        subject: {
+            type: String
+        },
+        reporter: {
+            type: Schema.Types.ObjectId,
+            ref: SCHEMA_NAME.USERS
         }
     },
     {

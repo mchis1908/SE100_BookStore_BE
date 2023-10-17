@@ -12,4 +12,7 @@ export default interface IExpense {
     description: string
     statusUpdatedAt: Date
     status: EExpenseStatus
+    images: string[]
+    subject: string
+    reporter: Types.ObjectId | IUser
 }

@@ -4,6 +4,7 @@ import rootRouter from "./root"
 import userRouter from "./user"
 
 import {
+    aggregateRouter,
     eventRouter,
     expenseRouter,
     manageBookRouter,
@@ -34,6 +35,7 @@ export default function getRoutes(app: Express) {
     app.use("/api/manage/salary", salaryRouter)
     app.use("/api/manage/salary-scale", salaryScaleRouter)
     app.use("/api/manage/expense", expenseRouter)
+    app.use("/api/manage/aggregate", aggregateRouter)
 
     app.use("/api/book", clientBookRouter)
     app.use("/api/invoice", invoiceRouter)

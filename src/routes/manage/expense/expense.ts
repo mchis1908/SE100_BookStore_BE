@@ -14,7 +14,7 @@ const toId = Types.ObjectId
 router.post(
     "/create",
     verifyRole(["admin", "employee"]),
-    mustHaveFields<IExpense>("cost", "description"),
+    mustHaveFields<IExpense>("cost", "description", "subject"),
     doNotAllowFields<IExpense>("status", "statusUpdatedAt", "statusUpdatedBy"),
     async (req: Request, res: Response) => {
         try {
@@ -29,7 +29,9 @@ router.post(
                 ...req.body,
                 status,
                 statusUpdatedAt: new Date(),
-                statusUpdatedBy: req.user_id
+                statusUpdatedBy: req.user_id,
+                reporter: req.user_id,
+                subject: req.body.subject || "No subject"
             } as IExpense)
 
             res.status(201).json({ success: true, message: "Expense created successfully", data: newExpense })
@@ -101,8 +103,9 @@ router.put(
 router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
     try {
         const { lastNDays, date, status, search_q } = req.query
+        const statuses = status ? status.toString().split(",") : []
         const expenses = await Expense.find({
-            ...(status && { status }),
+            ...(statuses.length > 0 && { status: { $in: statuses } }),
             ...(lastNDays && {
                 createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString()))) }
             }),
@@ -116,6 +119,8 @@ router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
                 $or: [{ description: { $regex: search_q.toString(), $options: "i" } }]
             })
         })
+            .populate("reporter", "name")
+            .populate("statusUpdatedBy", "name")
         res.json({ success: true, data: expenses })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })

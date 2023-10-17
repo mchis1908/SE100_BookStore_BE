@@ -61,7 +61,8 @@ const BookSchema = new Schema<IBook>(
             max: [1, "Discount value must be less than or equal to 1"]
         },
         image: {
-            type: String
+            type: String,
+            default: ""
         }
     },
     {

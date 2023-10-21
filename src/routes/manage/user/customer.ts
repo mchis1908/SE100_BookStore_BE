@@ -98,7 +98,12 @@ router.get("/", verifyRole(["admin", "employee"]), async (req, res) => {
             {
                 role: EUserRole.CUSTOMER,
                 isDeleted: isDeleted === "true" ? true : false,
-                $or: search_q ? [{ name: { $regex: search_q as string, $options: "i" } }] : [{}]
+                $or: search_q
+                    ? [
+                          { name: { $regex: search_q as string, $options: "i" } },
+                          { phoneNumber: { $regex: search_q as string, $options: "i" } }
+                      ]
+                    : [{}]
             },
             options,
             (err, result) => {

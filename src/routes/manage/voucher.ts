@@ -12,9 +12,9 @@ const router = Router()
 const toId = Types.ObjectId
 
 // GET ALL VOUCHERS
-router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/", verifyRole(), async (req: Request, res: Response) => {
     try {
-        const { page, limit, level } = req.query
+        const { page, limit, level, customer_id, canGetLowerLevel } = req.query
         const options: PaginateOptions = {
             page: parseInt(page as string, 10) || 1,
             limit: parseInt(limit as string, 10) || 10
@@ -22,7 +22,14 @@ router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Res
         await Voucher.paginate(
             level
                 ? {
-                      level
+                      level: canGetLowerLevel === "true" ? { $lte: level } : level,
+                      customersUsed: customer_id
+                          ? {
+                                $ne: customer_id
+                            }
+                          : {
+                                $exists: true
+                            }
                   }
                 : {},
             options,
@@ -74,6 +81,7 @@ router.post(
             const customers = await Customer.find({
                 level: { $gte: voucher.level }
             })
+
             const customerEmails = await User.find({
                 user: { $in: customers.map((customer) => customer._id) }
             }).select("email")

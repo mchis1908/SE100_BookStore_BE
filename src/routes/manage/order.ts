@@ -100,7 +100,7 @@ router.post(
 
             const invoiceDetailsIds = newInvoiceDetails.map((invoiceDetail) => invoiceDetail._id.toString())
 
-            invoiceDetails.forEach(async (invoiceDetail: IInvoiceDetail) => {
+            for (const invoiceDetail of invoiceDetails) {
                 const _book = await Book.findById(invoiceDetail.book)
                 if (_book) {
                     _book.quantity -= invoiceDetail.quantity
@@ -109,7 +109,7 @@ router.post(
                     }
                     await _book.save()
                 }
-            })
+            }
 
             const newInvoice = await Invoice.create({
                 employee: new toId(req.user_id),
@@ -139,6 +139,10 @@ router.post(
                     {
                         path: "employee",
                         select: "name phoneNumber"
+                    },
+                    {
+                        path: "vouchers",
+                        select: "name discountValue code"
                     }
                 ]
             })

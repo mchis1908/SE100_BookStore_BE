@@ -16,7 +16,6 @@ enum SCHEMA_NAME {
     DISCOUNT_EVENTS = "discount_events",
     VOUCHERS = "vouchers",
     EXPENSES = "expenses",
-    EXPENSE_TYPES = "expense_types",
     PREORDER_BOOKS = "preorder_books",
     PREORDER_BOOK_DETAILS = "preorder_book_details",
     PROBLEM_REPORTS = "problem_reports",

@@ -3,6 +3,8 @@ import { sendMail } from "../service/mailer"
 import moment from "moment"
 import emailContentProvider from "./provider"
 import { ISalaryScale } from "../interface/common/IEmployee"
+import bcrypt from "bcryptjs"
+import { toDot } from "../lib/converter"
 
 const sendVerifyEmail = async ({ email, verifyToken }: { email: string; verifyToken: string }) => {
     sendMail({
@@ -108,6 +110,7 @@ const sendNewEvent = async (email: string, event: IDiscountEvent) => {
 }
 
 const sendNewAccountCreated = async ({ email, user }: { email: string; user: IUser }) => {
+    const verifyToken = await bcrypt.hash(user.email, 10)
     await sendMail({
         to: email,
         subject: `[Bookstore] New account created`,
@@ -119,6 +122,24 @@ const sendNewAccountCreated = async ({ email, user }: { email: string; user: IUs
                 <p>Email: <b>${user.email}</b></p>
                 <p>Phone number: <b>${user.phoneNumber}</b></p>
                 <p>Password: <b>${user.password}</b></p>
+                <p>
+                    Before we get started, we just need to confirm that this is you. Click
+                    the button below to verify your email address:
+                </p>
+                <a
+                    href="${process.env.URL}/auth/verify-email?email=${email}&token=${verifyToken}"
+                    style="
+                    background-color: #2563eb;
+                    color: #fff;
+                    padding: 0.5rem 1rem;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    "
+                    >Verify Email</a
+                >
+                <p>
+                    If you didn't sign up for Bookstore, you can safely ignore this email.
+                </p>
             `
         })
     })
@@ -174,13 +195,15 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
     let temporaryTotalPrice = 0
     let temporaryDiscountPrice = 0
     let eventDiscountPrice = 0
+
     const customer = invoice.customer as IUser
     const employee = invoice.employee as IUser
+    const invoiceIdHex = invoice._id.toHexString().toUpperCase()
     await sendMail({
         to: email,
-        subject: `[Bookstore] Invoice`,
+        subject: `[Bookstore] Invoice #${invoiceIdHex}`,
         html: emailContentProvider({
-            title: "Invoice #" + invoice._id,
+            title: "Invoice #" + invoiceIdHex,
             children: `
                 <div>
                     <h2>Order of ${customer.name}</h2>
@@ -191,6 +214,7 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                     </p>
                     <p><b>Invoice Date:</b> ${moment(invoice.createdAt).format("llll")}</p>
                     <p><b>Staff:</b> ${employee.name} - ${employee.phoneNumber}</p>
+                    <p><b>Unit:</b><i>VND</i></p>
                 </div>
                 <table style="width: 100%">
                     <thead style="background-color: #f7f7f7; text-align: right">
@@ -199,6 +223,8 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                         <th>Quantity</th>
                         <th>Unit price</th>
                         <th>Subtotal</th>
+                        <th>Event discount</th>
+                        <th>Event discount price</th>
                     </tr>
                     </thead>
                     <tbody style="text-align: right">
@@ -206,32 +232,39 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                         .map((invoiceDetail: IInvoiceDetail) => {
                             const book = invoiceDetail.book as IBook
                             const quantity = invoiceDetail.quantity
-                            const subtotal = book.salesPrice * quantity
-                            temporaryTotalPrice += subtotal
-                            eventDiscountPrice += subtotal * (invoice.eventDiscountValue || 0)
+                            const subTotal = book.salesPrice * quantity
+                            const discountPrice = subTotal * (book.discountValue || 0)
+                            temporaryTotalPrice += subTotal
+                            eventDiscountPrice += subTotal * (book.discountValue || 0)
                             return `<tr>
                         <td>${book.name}</td>
                         <td>${quantity}</td>
-                        <td>${book.salesPrice}</td>
-                        <td>${subtotal}</td>
+                        <td>${toDot(book.salesPrice)}</td>
+                        <td>${toDot(subTotal)}</td>
+                        <td>${book.discountValue * 100}%</td>
+                        <td>${toDot(discountPrice)}</td>
                     </tr>`
                         })
                         .join("")}
                     </tbody>
                     <tfoot style="text-align: right">
                     <tr style="background-color: #f7f7f7; font-weight: bold">
-                        <td colspan="3" style="text-align: right">Temporary total price</td>
-                        <td>${temporaryTotalPrice}</td>
+                        <td colspan="3" style="text-align: right">Temporary total price (1)</td>
+                        <td>${toDot(temporaryTotalPrice)}</td>
+                        <td style="text-align: right">
+                            Total event discount price (2)
+                        </td>
+                        <td>${toDot(eventDiscountPrice)}</td>
                     </tr>
                     ${
                         invoice.vouchers.length > 0
                             ? `<tr>
-                        <td colspan="4" style="text-align: left">
-                        Vouchers
+                        <td colspan="6" style="text-align: center">
+                        <b>Vouchers</b>
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="4" style="text-align: right">
+                        <td colspan="6" style="text-align: right">
                         <table style="width: 100%">
                             <thead style="background-color: #f7f7f7;">
                             <tr>
@@ -254,45 +287,38 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                             </tbody>
                         </table>
                         </td>
-                    </tr>`
-                            : ""
-                    }
-                    ${
-                        invoice.eventDiscountValue
-                            ? `<tr>
-                        <td colspan="4" style="text-align: left">
-                        Discount event
-                        </td>
                     </tr>
-                    <tr>
-                        <td colspan="4" style="text-align: right">
-                        <table style="width: 100%">
-                            <thead style="background-color: #f7f7f7;">
-                            <tr>
-                                <th>Discount value</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>${invoice.eventDiscountValue * 100}%</td>
-                            </tr>
-                            </tbody>
-                        </table>
+                    <tr style="background-color: #f7f7f7; font-weight: bold">
+                        <td colspan="5" style="text-align: right">
+                        Total voucher discount price (3)
                         </td>
-                    </tr>`
+                        <td>${toDot(temporaryDiscountPrice)}</td>
+                    </tr>
+                    `
                             : ""
                     }
                     ${
                         invoice.vouchers.length > 0 || invoice.eventDiscountValue
                             ? `<tr style="background-color: #f7f7f7; font-weight: bold">
-                        <td colspan="3" style="text-align: right">Discount price</td>
-                        <td>${temporaryDiscountPrice} + ${eventDiscountPrice}</td>
-                    </tr>`
+                                    <td colspan="5" style="text-align: right">Discount price (4)</td>
+                                    <td>${toDot(eventDiscountPrice)}(2) + ${toDot(temporaryDiscountPrice)}(3)</td>
+                                </tr>
+                                <tr style="font-weight: bold">
+                                    <td colspan="5" style="text-align:right;">=</td>
+                                    <td>${toDot(temporaryDiscountPrice + eventDiscountPrice)}</td>
+                                </tr>
+                                `
                             : ""
                     }
                     <tr style="background-color: #f7f7f7; font-weight: bold">
-                        <td colspan="3" style="text-align: right">Total</td>
-                        <td>${temporaryTotalPrice - temporaryDiscountPrice - eventDiscountPrice}</td>
+                        <td colspan="5" style="text-align: right">Total</td>
+                        <td>${toDot(temporaryTotalPrice)}(1) - ${toDot(
+                            temporaryDiscountPrice + eventDiscountPrice
+                        )}(4)</td>
+                    </tr>
+                    <tr style="font-weight: bold">
+                        <td colspan="5" style="text-align: right">=</td>
+                        <td>${toDot(temporaryTotalPrice - temporaryDiscountPrice - eventDiscountPrice)}</td>
                     </tr>
                     </tfoot>
                 </table>

@@ -7,12 +7,13 @@ import bcrypt from "bcryptjs"
 import { toDot } from "../lib/converter"
 
 const sendVerifyEmail = async ({ email, verifyToken }: { email: string; verifyToken: string }) => {
-    sendMail({
-        to: email as string,
-        subject: "[Bookstore] Verify your email",
-        html: emailContentProvider({
-            title: "Verify your email",
-            children: `
+    try {
+        sendMail({
+            to: email as string,
+            subject: "[Bookstore] Verify your email",
+            html: emailContentProvider({
+                title: "Verify your email",
+                children: `
                 <p>
                     Thanks for signing up for Bookstore! We're excited to have you as an
                     early user.
@@ -36,68 +37,84 @@ const sendVerifyEmail = async ({ email, verifyToken }: { email: string; verifyTo
                     If you didn't sign up for Bookstore, you can safely ignore this email.
                 </p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const resetPassword = async ({ email, resetPassword }: { email: string; resetPassword: string }) => {
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] Reset password`,
-        html: emailContentProvider({
-            title: "Reset password",
-            children: `
+    try {
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] Reset password`,
+            html: emailContentProvider({
+                title: "Reset password",
+                children: `
                 <p>We heard that you lost your password. Sorry about that!</p>
                 <p>
                     But don't worry! You can use this password to login to your account:
                     <b>${resetPassword}</b>
                 </p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendVoucher = async ({ email, voucher }: { email: string; voucher: IVoucher }) => {
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] Voucher for you - ${voucher.name}`,
-        html: emailContentProvider({
-            title: "Voucher for you",
-            children: `
+    try {
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] Voucher for you - ${voucher.name}`,
+            html: emailContentProvider({
+                title: "Voucher for you",
+                children: `
                 <p>Thanks for using our service</p>
                 <p>We have a voucher for you</p>
                 <p>Voucher code: <b>${voucher.code}</b></p>
                 <p>Discount value: <b>${voucher.discountValue * 100}%</b></p>
                 <p>Expiration date: <b>${moment(voucher.expirationDate).format("DD-MM-YYYY hh:mm:ss")}</b></p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendVoucherExpired = async (email: string, voucher: IVoucher) => {
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] Voucher expired - ${voucher.name}`,
-        html: emailContentProvider({
-            title: "Voucher expired",
-            children: `
+    try {
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] Voucher expired - ${voucher.name}`,
+            html: emailContentProvider({
+                title: "Voucher expired",
+                children: `
                 <p>Thanks for using our service</p>
                 <p>Your voucher has expired</p>
                 <p>Voucher code: <b>${voucher.code}</b></p>
                 <p>Discount value: <b>${voucher.discountValue * 100}%</b></p>
                 <p>Expiration date: <b>${moment(voucher.expirationDate).format("DD-MM-YYYY hh:mm:ss")}</b></p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendNewEvent = async (email: string, event: IDiscountEvent) => {
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] New event - ${event.name}`,
-        html: emailContentProvider({
-            title: "New event",
-            children: `
+    try {
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] New event - ${event.name}`,
+            html: emailContentProvider({
+                title: "New event",
+                children: `
                 <p>Thanks for using our service</p>
                 <p>We have a new event for you</p>
                 <p>Event name: <b>${event.name}</b></p>
@@ -105,18 +122,22 @@ const sendNewEvent = async (email: string, event: IDiscountEvent) => {
                 <p>Start date: <b>${moment(event.startAt).format("DD-MM-YYYY hh:mm:ss")}</b></p>
                 <p>End date: <b>${moment(event.endAt, "DD-MM-YYYY hh:mm:ss")}</b></p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendNewAccountCreated = async ({ email, user }: { email: string; user: IUser }) => {
-    const verifyToken = await bcrypt.hash(user.email, 10)
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] New account created`,
-        html: emailContentProvider({
-            title: "New account created",
-            children: `
+    try {
+        const verifyToken = await bcrypt.hash(user.email, 10)
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] New account created`,
+            html: emailContentProvider({
+                title: "New account created",
+                children: `
                 <p>Thanks for using our service</p>
                 <p>We have created an account for you</p>
                 <p>Email: <b>${user.email}</b></p>
@@ -141,8 +162,11 @@ const sendNewAccountCreated = async ({ email, user }: { email: string; user: IUs
                     If you didn't sign up for Bookstore, you can safely ignore this email.
                 </p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendSalaryChange = async ({
@@ -154,18 +178,22 @@ const sendSalaryChange = async ({
     oldSalary: number
     newSalary: number
 }) => {
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] Salary changed`,
-        html: emailContentProvider({
-            title: "Salary changed",
-            children: `
+    try {
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] Salary changed`,
+            html: emailContentProvider({
+                title: "Salary changed",
+                children: `
                 <p>Your salary has changed</p>
                 <p>Old salary: <b>${oldSalary}</b></p>
                 <p>New salary: <b>${newSalary}</b></p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendSalaryScaleChange = async ({
@@ -177,34 +205,39 @@ const sendSalaryScaleChange = async ({
     oldSalaryScale: ISalaryScale
     newSalaryScale: ISalaryScale
 }) => {
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] Salary scale changed`,
-        html: emailContentProvider({
-            title: "Salary scale changed",
-            children: `
+    try {
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] Salary scale changed`,
+            html: emailContentProvider({
+                title: "Salary scale changed",
+                children: `
                 <p>Your salary scale has changed</p>
                 <p>Old salary scale: <b>${oldSalaryScale.coefficient}</b></p>
                 <p>New salary scale: <b>${newSalaryScale.coefficient}</b></p>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: IInvoice }) => {
-    let temporaryTotalPrice = 0
-    let temporaryDiscountPrice = 0
-    let eventDiscountPrice = 0
+    try {
+        let temporaryTotalPrice = 0
+        let temporaryDiscountPrice = 0
+        let eventDiscountPrice = 0
 
-    const customer = invoice.customer as IUser
-    const employee = invoice.employee as IUser
-    const invoiceIdHex = invoice._id.toHexString().toUpperCase()
-    await sendMail({
-        to: email,
-        subject: `[Bookstore] Invoice #${invoiceIdHex}`,
-        html: emailContentProvider({
-            title: "Invoice #" + invoiceIdHex,
-            children: `
+        const customer = invoice.customer as IUser
+        const employee = invoice.employee as IUser
+        const invoiceIdHex = invoice._id.toHexString().toUpperCase()
+        await sendMail({
+            to: email,
+            subject: `[Bookstore] Invoice #${invoiceIdHex}`,
+            html: emailContentProvider({
+                title: "Invoice #" + invoiceIdHex,
+                children: `
                 <div>
                     <h2>Order of ${customer.name}</h2>
                     <p>
@@ -212,7 +245,9 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                     <b>Email:</b> ${customer.email}<br />
                     <b>Phone number: ${customer.phoneNumber}</b>
                     </p>
-                    <p><b>Invoice Date:</b> ${moment(invoice.createdAt).format("llll")}</p>
+                    <p><b>Invoice Date:</b> ${moment(invoice.createdAt.getTime() - 7 * 60 * 60 * 1000).format(
+                        "llll"
+                    )}</p>
                     <p><b>Staff:</b> ${employee.name} - ${employee.phoneNumber}</p>
                     <p><b>Unit:</b><i>VND</i></p>
                 </div>
@@ -324,8 +359,11 @@ const sendOrderInvoice = async ({ email, invoice }: { email: string; invoice: II
                 </table>
                 <cite>Note: ${invoice.note || "Nothing"}</cite>
             `
+            })
         })
-    })
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 export {

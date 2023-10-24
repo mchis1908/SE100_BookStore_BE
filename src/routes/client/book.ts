@@ -26,25 +26,26 @@ router.get("/", async (req: Request, res: Response) => {
         }
 
         await Book.paginate(
-            search_q && search_q !== "0"
-                ? {
-                      $and: [
-                          {
-                              $or: [
-                                  { name: { $regex: search_q as string, $options: "i" } },
-                                  { author: { $regex: search_q as string, $options: "i" } },
-                                  { publisher: { $regex: search_q as string, $options: "i" } },
-                                  { barcode: { $regex: search_q as string, $options: "i" } }
-                              ]
-                          },
-                          category
-                              ? {
-                                    categories: { $in: [category] }
-                                }
-                              : {}
-                      ]
-                  }
-                : {},
+            {
+                $and: [
+                    {
+                        $or: [
+                            { name: { $regex: (search_q || "") as string, $options: "i" } },
+                            { author: { $regex: (search_q || "") as string, $options: "i" } },
+                            { publisher: { $regex: (search_q || "") as string, $options: "i" } },
+                            { barcode: { $regex: (search_q || "") as string, $options: "i" } }
+                        ]
+                    },
+                    category
+                        ? {
+                              // check if category is in categories array
+                              categories: {
+                                  $in: [category]
+                              }
+                          }
+                        : {}
+                ]
+            },
             options,
             (err, result) => {
                 if (err) return res.status(500).json({ success: false, message: err.message })

@@ -162,7 +162,7 @@ router.get("/:id", verifyRole(), async (req: Request, res: Response) => {
                     path: "invoiceDetails",
                     populate: {
                         path: "book",
-                        select: "name author salesPrice"
+                        select: "name author salesPrice barcode discountValue"
                     }
                 }
             ]

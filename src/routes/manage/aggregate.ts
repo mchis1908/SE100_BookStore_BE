@@ -12,11 +12,14 @@ const router = Router()
 // GET SOLD BOOKS
 router.get("/sold-books", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const { lastNDays, lastNMonths, byCategory } = req.query as {
+        const { lastNDays, lastNMonths, byCategory, byCount } = req.query as {
             lastNDays?: number
             lastNMonths?: number
             byCategory?: boolean
+            byCount?: boolean
         }
+        const lastNDaysTime = (lastNDays || 7) * 24 * 60 * 60 * 1000
+        const lastNMonthsTime = (lastNMonths || 12) * 30 * 24 * 60 * 60 * 1000
 
         const data = await InvoiceDetail.aggregate([
             {
@@ -50,14 +53,10 @@ router.get("/sold-books", verifyRole(["admin", "employee"]), async (req: Request
                 $match: {
                     "invoice.createdAt": !lastNMonths
                         ? {
-                              $gte: new Date(
-                                  new Date().setDate(new Date().getDate() - parseInt((lastNDays || 7).toString()))
-                              )
+                              $gte: new Date(Date.now() - lastNDaysTime)
                           }
                         : {
-                              $gte: new Date(
-                                  new Date().setMonth(new Date().getMonth() - parseInt((lastNMonths || 1).toString()))
-                              )
+                              $gte: new Date(Date.now() - lastNMonthsTime)
                           }
                 }
             },
@@ -67,9 +66,11 @@ router.get("/sold-books", verifyRole(["admin", "employee"]), async (req: Request
                           _id: lastNMonths
                               ? { $dateToString: { format: "%Y-%m", date: "$invoice.createdAt" } }
                               : { $dateToString: { format: "%Y-%m-%d", date: "$invoice.createdAt" } },
-                          value: {
-                              $sum: "$invoice.total"
-                          }
+                          value: !byCount
+                              ? {
+                                    $sum: "$invoice.total"
+                                }
+                              : { $sum: 1 }
                       }
                     : {
                           _id: "$book.categories.name",
@@ -343,13 +344,13 @@ router.get("/salary", verifyRole(["admin", "employee"]), async (req: Request, re
             {
                 $group: {
                     _id: null,
-                    currTotalSalary: { $sum: "$total" }
+                    current: { $sum: "$total" }
                 }
             },
             {
                 $project: {
                     _id: 0,
-                    currTotalSalary: 1,
+                    current: 1,
                     time: "$_id"
                 }
             }
@@ -362,13 +363,13 @@ router.get("/salary", verifyRole(["admin", "employee"]), async (req: Request, re
             {
                 $group: {
                     _id: null,
-                    prevTotalSalary: { $sum: "$total" }
+                    prev: { $sum: "$total" }
                 }
             },
             {
                 $project: {
                     _id: 0,
-                    prevTotalSalary: 1
+                    prev: 1
                 }
             }
         ])
@@ -388,11 +389,176 @@ router.get("/salary", verifyRole(["admin", "employee"]), async (req: Request, re
             }
         )
 
-        const time = `${_year}-${_month.toString().length > 2 ? "" : 0}${_month}`
-        const curr = currSalary[0] === undefined ? { currTotalSalary: 0 } : currSalary[0]
-        const prev = prevSalary[0] === undefined ? { prevTotalSalary: 0 } : prevSalary[0]
+        const time = `${_year}-${_month.toString().length === 2 ? "" : 0}${_month}`
+        const curr = currSalary[0] === undefined ? { current: 0 } : currSalary[0]
+        const prev = prevSalary[0] === undefined ? { prev: 0 } : prevSalary[0]
+        const difference = curr.current / (prev.prev || 1)
+        const output = { ...curr, ...prev, difference, time, salary: employees }
+        return res.json({ data: output, success: true })
+    } catch (error: any) {
+        return res.status(500).json({ message: error.message, success: false })
+    }
+})
 
-        const output = { ...curr, ...prev, time, salary: employees }
+// EXPENSE
+router.get("/expense", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const { month, year } = req.query
+        const _month = Number(month || new Date().getMonth())
+        const _year = Number(year || new Date().getFullYear())
+        const prevMonth = _month - 1 === 0 ? 12 : _month - 1
+        const prevYear = _month - 1 === 0 ? _year - 1 : _year
+
+        const currSalary = await Expense.aggregate([
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: [{ $month: "$updatedAt" }, _month] },
+                            { $eq: [{ $year: "$updatedAt" }, _year] },
+                            { $eq: ["$status", EExpenseStatus.RESOLVED] }
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    current: { $sum: "$cost" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    current: 1,
+                    time: "$_id"
+                }
+            }
+        ])
+
+        const prevSalary = await Expense.aggregate([
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: [{ $month: "$updatedAt" }, prevMonth] },
+                            { $eq: [{ $year: "$updatedAt" }, prevYear] },
+                            { $eq: ["$status", EExpenseStatus.RESOLVED] }
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    prev: { $sum: "$cost" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    prev: 1
+                }
+            }
+        ])
+
+        const time = `${_year}-${_month.toString().length === 2 ? "" : 0}${_month}`
+        const curr = currSalary[0] === undefined ? { current: 0 } : currSalary[0]
+        const prev = prevSalary[0] === undefined ? { prev: 0 } : prevSalary[0]
+        const difference = curr.current / (prev.prev || 1)
+
+        const output = { ...curr, ...prev, difference, time }
+        return res.json({ data: output, success: true })
+    } catch (error: any) {
+        return res.status(500).json({ message: error.message, success: false })
+    }
+})
+
+// SELLING BOOKS
+router.get("/selling", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const { month, year } = req.query
+        const _month = Number(month || new Date().getMonth())
+        const _year = Number(year || new Date().getFullYear())
+        const prevMonth = _month - 1 === 0 ? 12 : _month - 1
+        const prevYear = _month - 1 === 0 ? _year - 1 : _year
+
+        const currSalary = await InvoiceDetail.aggregate([
+            {
+                $lookup: {
+                    from: SCHEMA_NAME.INVOICES,
+                    localField: "invoice",
+                    foreignField: "_id",
+                    as: "invoice"
+                }
+            },
+            { $unwind: "$invoice" },
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: [{ $month: "$invoice.createdAt" }, _month] },
+                            { $eq: [{ $year: "$invoice.createdAt" }, _year] }
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    current: { $sum: "$invoice.total" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    current: 1,
+                    time: "$_id"
+                }
+            }
+        ])
+
+        const prevSalary = await InvoiceDetail.aggregate([
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: [{ $month: "$createdAt" }, prevMonth] },
+                            { $eq: [{ $year: "$createdAt" }, prevYear] }
+                        ]
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: SCHEMA_NAME.INVOICES,
+                    localField: "invoice",
+                    foreignField: "_id",
+                    as: "invoice"
+                }
+            },
+            { $unwind: "$invoice" },
+            {
+                $group: {
+                    _id: null,
+                    prev: { $sum: "$invoice.total" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    prev: 1,
+                    time: "$_id"
+                }
+            }
+        ])
+
+        const time = `${_year}-${_month.toString().length === 2 ? "" : 0}${_month}`
+        const curr = currSalary[0] === undefined ? { current: 0 } : currSalary[0]
+        const prev = prevSalary[0] === undefined ? { prev: 0 } : prevSalary[0]
+        const difference = curr.current / (prev.prev || 1) || 0
+
+        const output = { ...curr, ...prev, difference, time }
         return res.json({ data: output, success: true })
     } catch (error: any) {
         return res.status(500).json({ message: error.message, success: false })

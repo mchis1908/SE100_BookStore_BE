@@ -22,14 +22,18 @@ router.post(
             const newEvent = await DiscountEvent.create({
                 ...req.body
             })
-            await Book.updateMany(
-                { _id: { $in: [...discountBooks, ...newEvent.discountBooks] } },
-                {
-                    $set: {
-                        discountValue: eventDiscountValue
+            // check if startAt equal today
+            if (new Date(startAt).getDate() === new Date().getDate()) {
+                await Book.updateMany(
+                    { _id: { $in: discountBooks } },
+                    {
+                        $set: {
+                            discountValue: eventDiscountValue
+                        }
                     }
-                }
-            )
+                )
+            }
+
             const customers = await User.find({
                 role: EUserRole.CUSTOMER
             }).select("email")
@@ -75,12 +79,22 @@ router.put("/:event_id", verifyRole(["admin", "employee"]), async (req: Request,
 })
 
 // GET CURRENT EVENT
-router.get("/current", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/current", async (req: Request, res: Response) => {
     try {
         const event = await DiscountEvent.findOne({
             startAt: { $lte: new Date() },
             endAt: { $gte: new Date() }
         })
+        if (event) {
+            await Book.updateMany(
+                { _id: { $in: event.discountBooks } },
+                {
+                    $set: {
+                        discountValue: event.eventDiscountValue
+                    }
+                }
+            )
+        }
         res.json({ success: true, data: event })
     } catch (error: any) {
         return res.status(500).json({ success: false, message: error.message })
@@ -88,7 +102,7 @@ router.get("/current", verifyRole(["admin", "employee"]), async (req: Request, r
 })
 
 // GET PASS EVENTS
-router.get("/pass", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/pass", async (req: Request, res: Response) => {
     try {
         const { page, limit } = req.query
         const options: PaginateOptions = {
@@ -113,9 +127,9 @@ router.get("/pass", verifyRole(["admin", "employee"]), async (req: Request, res:
 })
 
 // GET UPCOMING EVENTS
-router.get("/upcoming", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/upcoming", async (req: Request, res: Response) => {
     try {
-        const { page, limit } = req.query
+        const { page, limit, search_q } = req.query
         const options: PaginateOptions = {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
@@ -123,7 +137,10 @@ router.get("/upcoming", verifyRole(["admin", "employee"]), async (req: Request, 
         }
         await DiscountEvent.paginate(
             {
-                startAt: { $gte: new Date() }
+                startAt: { $gte: new Date() },
+                ...(search_q && {
+                    name: { $regex: search_q as string, $options: "i" }
+                })
             },
             options,
             (err, result) => {
@@ -138,7 +155,7 @@ router.get("/upcoming", verifyRole(["admin", "employee"]), async (req: Request, 
 })
 
 // GET EVENT BY ID
-router.get("/:event_id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+router.get("/:event_id", async (req: Request, res: Response) => {
     try {
         const { event_id } = req.params
         if (!event_id) return res.status(400).json({ success: false, message: "Missing event_id" })
@@ -151,6 +168,14 @@ router.get("/:event_id", verifyRole(["admin", "employee"]), async (req: Request,
             }
         })
         if (!event) return res.status(400).json({ success: false, message: "Event not found" })
+        await Book.updateMany(
+            { _id: { $in: event.discountBooks } },
+            {
+                $set: {
+                    discountValue: event.eventDiscountValue
+                }
+            }
+        )
         res.json({ success: true, data: event })
     } catch (error: any) {
         return res.status(500).json({ success: false, message: error.message })

@@ -1,6 +1,7 @@
 import { PaginateModel, Schema, model } from "mongoose"
 import { IInvoice, SCHEMA_NAME } from "../../interface"
 import mongooseePaginate from "mongoose-paginate-v2"
+import moment from "moment"
 
 const InvoiceSchema = new Schema<IInvoice>(
     {
@@ -36,7 +37,9 @@ const InvoiceSchema = new Schema<IInvoice>(
     },
     {
         versionKey: false,
-        timestamps: true
+        timestamps: {
+            currentTime: () => Date.now() + 7 * 60 * 60 * 1000
+        }
     }
 )
 

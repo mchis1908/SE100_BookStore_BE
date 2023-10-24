@@ -44,6 +44,23 @@ router.get("/", verifyRole(), async (req: Request, res: Response) => {
     }
 })
 
+// GET VOUCHER BY ID
+router.get("/:voucher_id", verifyRole(), async (req: Request, res: Response) => {
+    try {
+        const { voucher_id } = req.params
+        const voucher = await Voucher.findById(voucher_id, undefined, {
+            populate: {
+                path: "customersUsed",
+                select: "name email phoneNumber"
+            }
+        })
+        if (!voucher) return res.status(400).json({ success: false, message: "Voucher does not exist" })
+        res.status(200).json({ success: true, data: voucher })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
+
 // CREATE VOUCHER
 router.post(
     "/create",

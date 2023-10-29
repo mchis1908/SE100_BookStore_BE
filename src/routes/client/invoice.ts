@@ -2,7 +2,8 @@ import { Request, Response, Router } from "express"
 import { SCHEMA_NAME } from "../../interface"
 import verifyRole from "../../middleware/verifyRole"
 import { Invoice } from "../../models"
-import { PaginateOptions, Types } from "mongoose"
+import { PaginateOptions, Types, isValidObjectId } from "mongoose"
+import crypto from "crypto"
 
 const router = Router()
 const toId = Types.ObjectId
@@ -28,50 +29,63 @@ router.get("/", verifyRole(["admin", "employee"]), async (req: Request, res: Res
         }
 
         const parseValueInt = parseInt(search_q as string)
+        const searchId = isValidObjectId(search_q as string) ? new toId(search_q as string) : null
 
-        await Invoice.paginate(
-            search_q && search_q !== "0"
-                ? {
-                      $or:
-                          parseValueInt && !isNaN(parseValueInt)
-                              ? [{ total: parseInt(search_q as string) }]
-                              : [
-                                    { "customer.name": { $regex: search_q as string, $options: "i" } },
-                                    { "employee.name": { $regex: search_q as string, $options: "i" } },
-                                    { "categories.name": { $regex: search_q as string, $options: "i" } }
-                                ],
-                      ...(lastNDays && {
-                          createdAt: {
-                              $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString())))
-                          }
-                      }),
-                      ...(date && {
-                          createdAt: {
-                              $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
-                              $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
-                          }
-                      })
-                  }
-                : {
-                      ...(lastNDays && {
-                          createdAt: {
-                              $gte: new Date(new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString())))
-                          }
-                      }),
-                      ...(date && {
-                          createdAt: {
-                              $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
-                              $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
-                          }
-                      })
-                  },
-            options,
-            (err, result) => {
-                if (err) return res.status(500).json({ success: false, message: err.message })
-                const { docs, ...rest } = result
-                return res.json({ success: true, data: docs, ...rest })
-            }
-        )
+        if (searchId) {
+            await Invoice.paginate(
+                {
+                    _id: searchId
+                },
+                options,
+                (err, result) => {
+                    if (err) return res.status(500).json({ success: false, message: err.message })
+                    const { docs, ...rest } = result
+                    return res.json({ success: true, data: docs, ...rest })
+                }
+            )
+        } else {
+            await Invoice.paginate(
+                search_q && search_q !== "0"
+                    ? {
+                          $or:
+                              parseValueInt && !isNaN(parseValueInt) ? [{ total: parseInt(search_q as string) }] : [{}],
+                          ...(lastNDays && {
+                              createdAt: {
+                                  $gte: new Date(
+                                      new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString()))
+                                  )
+                              }
+                          }),
+                          ...(date && {
+                              createdAt: {
+                                  $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                                  $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                              }
+                          })
+                      }
+                    : {
+                          ...(lastNDays && {
+                              createdAt: {
+                                  $gte: new Date(
+                                      new Date().setDate(new Date().getDate() - parseInt(lastNDays.toString()))
+                                  )
+                              }
+                          }),
+                          ...(date && {
+                              createdAt: {
+                                  $gte: new Date(new Date(date.toString()).setHours(0, 0, 0)),
+                                  $lte: new Date(new Date(date.toString()).setHours(23, 59, 59))
+                              }
+                          })
+                      },
+                options,
+                (err, result) => {
+                    if (err) return res.status(500).json({ success: false, message: err.message })
+                    const { docs, ...rest } = result
+                    return res.json({ success: true, data: docs, ...rest })
+                }
+            )
+        }
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

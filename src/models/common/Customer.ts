@@ -16,7 +16,6 @@ const CustomerSchema = new Schema<ICustomer>(
         ],
         level: {
             type: Number,
-            enum: Object.keys(RANKS),
             default: 1
         },
         rank: {

@@ -12,13 +12,22 @@ const router = Router()
 router.post(
     "/",
     verifyRole(["admin", "employee"]),
-    mustHaveFields<IDiscountEvent>("discountBooks", "startAt", "endAt", "name", "image", "eventDiscountValue"),
+    mustHaveFields<IDiscountEvent>("discountBooks", "startAt", "endAt", "name", "eventDiscountValue"),
     async (req: Request, res: Response) => {
         try {
             const { startAt, endAt, discountBooks, eventDiscountValue } = req.body as IDiscountEvent
 
             if (startAt > endAt)
                 return res.status(400).json({ success: false, message: "Start time must be before end time" })
+
+            const existingEvent = await DiscountEvent.findOne({
+                startAt: { $gte: startAt },
+                endAt: { $lte: endAt }
+            })
+            if (existingEvent)
+                return res
+                    .status(400)
+                    .json({ success: false, message: "There is an event (current/upcoming) at this time" })
             const newEvent = await DiscountEvent.create({
                 ...req.body
             })
@@ -91,6 +100,15 @@ router.get("/current", async (req: Request, res: Response) => {
                 {
                     $set: {
                         discountValue: event.eventDiscountValue
+                    }
+                }
+            )
+        } else {
+            await Book.updateMany(
+                {},
+                {
+                    $set: {
+                        discountValue: 0
                     }
                 }
             )
@@ -168,14 +186,25 @@ router.get("/:event_id", async (req: Request, res: Response) => {
             }
         })
         if (!event) return res.status(400).json({ success: false, message: "Event not found" })
-        await Book.updateMany(
-            { _id: { $in: event.discountBooks } },
-            {
-                $set: {
-                    discountValue: event.eventDiscountValue
+        if (new Date(event.startAt).getDate() === new Date().getDate()) {
+            await Book.updateMany(
+                { _id: { $in: event.discountBooks } },
+                {
+                    $set: {
+                        discountValue: event.eventDiscountValue
+                    }
                 }
-            }
-        )
+            )
+        } else {
+            await Book.updateMany(
+                { _id: { $in: event.discountBooks } },
+                {
+                    $set: {
+                        discountValue: 0
+                    }
+                }
+            )
+        }
         res.json({ success: true, data: event })
     } catch (error: any) {
         return res.status(500).json({ success: false, message: error.message })

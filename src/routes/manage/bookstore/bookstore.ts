@@ -35,7 +35,7 @@ router.post(
 // GET ALL FLOORS
 router.get("/floors", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const floors = await Floor.find({})
+        const floors = await Floor.find({}).populate("rows", "index")
         res.json({ success: true, data: floors })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
@@ -55,7 +55,7 @@ router.post(
             if (rows.length >= MAX_ROW) {
                 return res.status(400).json({ success: false, message: `Maximum row is ${MAX_ROW}` })
             }
-            if (rows.find((row) => row.index === index)) {
+            if (rows.find((row) => row.index === index && row.floor.toString() === floor_id)) {
                 return res.status(400).json({ success: false, message: `Row ${index} already exists` })
             }
 

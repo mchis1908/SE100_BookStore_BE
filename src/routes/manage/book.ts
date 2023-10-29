@@ -70,7 +70,11 @@ router.get("/category", async (req: Request, res: Response) => {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
             populate: {
-                path: "row"
+                path: "row",
+                populate: {
+                    path: "floor",
+                    select: "-rows"
+                }
             }
         }
         await BookCategory.paginate(
@@ -256,7 +260,22 @@ router.get("/pre-order", verifyRole(["admin", "employee"]), async (req: Request,
     try {
         const options: PaginateOptions = {
             page: Number(req.query.page) || 1,
-            limit: Number(req.query.limit) || 10
+            limit: Number(req.query.limit) || 10,
+            populate: [
+                {
+                    path: "customer",
+                    select: "name user refPath",
+                    populate: {
+                        path: "user",
+                        select: "rank point"
+                    }
+                },
+                {
+                    path: "employee",
+                    select: "name"
+                }
+            ],
+            sort: { expirationDate: 1, point: -1 }
         }
         await PreOrderBook.paginate({}, options, (err, result) => {
             if (err) return res.status(500).json({ success: false, message: err.message })
@@ -295,15 +314,42 @@ router.get("/pre-order/:id", verifyRole(), async (req: Request, res: Response) =
     try {
         const { id } = req.params
         const preOrderBook = await PreOrderBook.findById(id, undefined, {
-            populate: {
-                path: "preOrderBookDetails",
-                populate: {
-                    path: "book",
-                    select: "name author publisher"
+            populate: [
+                {
+                    path: "customer",
+                    select: "name user refPath",
+                    populate: {
+                        path: "user",
+                        select: "rank point"
+                    }
+                },
+                {
+                    path: "employee",
+                    select: "name"
+                },
+                {
+                    path: "preOrderBookDetails",
+                    populate: {
+                        path: "book",
+                        select: "name author publisher"
+                    }
                 }
-            }
+            ]
         })
         res.json({ success: true, data: preOrderBook })
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message })
+    }
+})
+
+router.delete("/pre-order/:id", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+        const preOrderBook = await PreOrderBook.findByIdAndDelete(id)
+        if (!preOrderBook) {
+            return res.status(400).json({ success: false, message: `Pre-order book ${id} does not exist` })
+        }
+        res.json({ success: true, message: "Pre-order book deleted successfully" })
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message })
     }

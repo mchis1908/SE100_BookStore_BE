@@ -66,7 +66,7 @@ router.put("/:employee_id", verifyRole(["admin"]), async (req: Request, res: Res
     try {
         const { employee_id } = req.params
         if (!employee_id) return res.status(400).json({ success: false, message: "Missing employee_id" })
-        const user = await User.findOne({ user: employee_id })
+        const user = await User.findById(employee_id)
         if (!user) return res.status(400).json({ success: false, message: "Employee not found" })
         if (user.role !== EUserRole.EMPLOYEE)
             return res.status(400).json({ success: false, message: "This is not an employee" })
@@ -106,56 +106,6 @@ router.put("/:employee_id", verifyRole(["admin"]), async (req: Request, res: Res
     }
 })
 
-// EDIT EMPLOYEE INFO
-router.put(
-    "/edit-info/:employee_id",
-    verifyRole(["admin"]),
-    doNotAllowFields<IUser>("role", "password"),
-    doNotAllowFields<IEmployee>("salaryScale", "startDateOfWork", "seniority"),
-    async (req: Request, res: Response) => {
-        try {
-            const { employee_id } = req.params
-            if (!employee_id) return res.status(400).json({ success: false, message: "Missing employee_id" })
-            const user = await User.findOne({ user: employee_id })
-            if (!user) return res.status(400).json({ success: false, message: "Employee not found" })
-            if (user.role !== EUserRole.EMPLOYEE)
-                return res.status(400).json({ success: false, message: "This is not an employee" })
-            await user.updateOne({
-                $set: {
-                    ...req.body
-                }
-            })
-
-            res.json({ success: true, message: "Employee updated successfully" })
-        } catch (error: any) {
-            return res.status(500).json({ success: false, message: error.message })
-        }
-    }
-)
-
-// EDIT EMPLOYEE SALARY
-router.put(
-    "/edit-salary/:employee_id",
-    verifyRole(["admin"]),
-    mustHaveFields<IEmployee>("salary"),
-    doNotAllowFields<IEmployee>("startDateOfWork", "seniority", "salaryScale"),
-    async (req: Request, res: Response) => {
-        try {
-            const { employee_id } = req.params
-            const employee = await Employee.findById(employee_id)
-            if (!employee) return res.status(400).json({ success: false, message: "Employee not found" })
-            await employee.updateOne({
-                $set: {
-                    salary: req.body.salary
-                }
-            })
-            res.json({ success: true, message: "Employee updated successfully" })
-        } catch (error: any) {
-            return res.status(500).json({ success: false, message: error.message })
-        }
-    }
-)
-
 // GET ALL EMPLOYEES
 router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
     try {
@@ -179,7 +129,7 @@ router.get("/", verifyRole(["admin"]), async (req: Request, res: Response) => {
         await User.paginate(
             {
                 role: EUserRole.EMPLOYEE,
-                isDeleted: isDeleted === "true" ? true : false,
+                isDeleted: isDeleted !== undefined ? (isDeleted === "true" ? true : false) : { $exists: true },
                 $or: search_q
                     ? [
                           { name: { $regex: search_q as string, $options: "i" } },
@@ -241,7 +191,7 @@ router.get("/salary", verifyRole(["admin"]), async (req: Request, res: Response)
         }
         await User.paginate(
             {
-                isDeleted: isDeleted === "true" ? true : false,
+                isDeleted: isDeleted !== "" ? (isDeleted === "true" ? true : false) : { $exists: true },
                 $or: search_q ? [{ name: { $regex: search_q as string, $options: "i" } }] : [{}],
                 role: EUserRole.EMPLOYEE
             },

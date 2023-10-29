@@ -179,7 +179,7 @@ router.delete("/delete-invoice/:invoice_id", verifyRole(["admin", "employee"]), 
 // REFUND
 router.post("/refund", verifyRole(["admin", "employee"]), async (req: Request, res: Response) => {
     try {
-        const { invoice_id, refund_details } = req.body
+        const { invoice_id, refund_details, total } = req.body
         const invoice = await Invoice.findById(invoice_id).populate("invoiceDetails")
         if (!invoice) {
             return res.status(400).json({ success: false, message: `Invoice ${invoice_id} does not exist` })
@@ -191,46 +191,49 @@ router.post("/refund", verifyRole(["admin", "employee"]), async (req: Request, r
             const { book, quantity } = refundDetail
             const _book = await Book.findById(book)
             if (_book) {
-                const { salesPrice } = _book
                 const invoiceDetail = await InvoiceDetails.findOne({ invoice: invoice_id, book })
                 if (!invoiceDetail) {
                     return res
                         .status(400)
                         .json({ success: false, message: `Invoice detail ${invoiceDetail} does not exist` })
                 }
-                await invoiceDetail.updateOne({ $set: { quantity: invoiceDetail.quantity - quantity } })
-                const user = await User.findById(invoice.customer)
-                if (!user) {
-                    return res.status(400).json({ success: false, message: `User ${invoice.customer} does not exist` })
-                }
-                const _customer = await Customer.findById(user.user)
-                if (_customer) {
-                    const totalPrice = salesPrice * quantity
-                    const newPoint = _customer.point - totalPrice / POINT_RANKING > 0 ? _customer.point : 0
-                    _customer.point = newPoint
-                    console.log({ _customer })
-                    switch (true) {
-                        case newPoint >= PLATINUM_REACH_POINT:
-                            _customer.rank = ERank.PLATINUM
-                            _customer.level = 4
-                            break
-                        case newPoint >= GOLD_REACH_POINT:
-                            _customer.rank = ERank.GOLD
-                            _customer.level = 3
-                            break
-                        case newPoint >= SILVER_REACH_POINT:
-                            _customer.rank = ERank.SILVER
-                            _customer.level = 2
-                            break
-                        default:
-                            _customer.rank = ERank.BRONZE
-                            _customer.level = 1
-                            break
-                    }
-
-                    await _customer.save()
+                const leftQ = invoiceDetail.quantity - quantity
+                await invoiceDetail.updateOne({ $set: { quantity: leftQ } })
+                if (leftQ === 0) {
+                    await invoiceDetail.deleteOne()
                 }
             }
+        }
+        await invoice.updateOne({ $set: { total: invoice.total - total } })
+        const user = await User.findById(invoice.customer)
+        if (!user) {
+            return res.status(400).json({ success: false, message: `User ${invoice.customer} does not exist` })
+        }
+        const _customer = await Customer.findById(user.user)
+        if (_customer) {
+            const totalPrice = total
+            const newPoint = _customer.point - totalPrice / POINT_RANKING > 0 ? _customer.point : 0
+            _customer.point = newPoint
+            switch (true) {
+                case newPoint >= PLATINUM_REACH_POINT:
+                    _customer.rank = ERank.PLATINUM
+                    _customer.level = 4
+                    break
+                case newPoint >= GOLD_REACH_POINT:
+                    _customer.rank = ERank.GOLD
+                    _customer.level = 3
+                    break
+                case newPoint >= SILVER_REACH_POINT:
+                    _customer.rank = ERank.SILVER
+                    _customer.level = 2
+                    break
+                default:
+                    _customer.rank = ERank.BRONZE
+                    _customer.level = 1
+                    break
+            }
+
+            await _customer.save()
         }
         res.status(200).json({ success: true, message: "Refund successfully" })
     } catch (error: any) {

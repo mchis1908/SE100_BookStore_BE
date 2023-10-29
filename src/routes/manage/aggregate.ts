@@ -45,21 +45,23 @@ router.get("/sold-books", verifyRole(["admin", "employee"]), async (req: Request
                     from: SCHEMA_NAME.INVOICES,
                     localField: "invoice",
                     foreignField: "_id",
-                    as: "invoice"
+                    as: "invoice",
+                    pipeline: [
+                        {
+                            $match: {
+                                createdAt: !lastNMonths
+                                    ? {
+                                          $gte: new Date(Date.now() - lastNDaysTime)
+                                      }
+                                    : {
+                                          $gte: new Date(Date.now() - lastNMonthsTime)
+                                      }
+                            }
+                        }
+                    ]
                 }
             },
             { $unwind: "$invoice" },
-            {
-                $match: {
-                    "invoice.createdAt": !lastNMonths
-                        ? {
-                              $gte: new Date(Date.now() - lastNDaysTime)
-                          }
-                        : {
-                              $gte: new Date(Date.now() - lastNMonthsTime)
-                          }
-                }
-            },
             {
                 $group: !byCategory
                     ? {
@@ -333,6 +335,7 @@ router.get("/salary", verifyRole(["admin", "employee"]), async (req: Request, re
     try {
         const { month, year } = req.query
         const _month = Number(month || new Date().getMonth())
+        console.log({ _month })
         const _year = Number(year || new Date().getFullYear())
         const prevMonth = _month - 1 === 0 ? 12 : _month - 1
         const prevYear = _month - 1 === 0 ? _year - 1 : _year
@@ -384,7 +387,15 @@ router.get("/salary", verifyRole(["admin", "employee"]), async (req: Request, re
                 select: "employee workingDays total forceWorkingDays",
                 populate: {
                     path: "employee",
-                    select: "name email phoneNumber"
+                    select: "name email phoneNumber user refPath",
+                    populate: {
+                        path: "user",
+                        select: "salary salaryScale",
+                        populate: {
+                            path: "salaryScale",
+                            select: "coefficient index"
+                        }
+                    }
                 }
             }
         )

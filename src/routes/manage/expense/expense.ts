@@ -14,7 +14,7 @@ const toId = Types.ObjectId
 router.post(
     "/create",
     verifyRole(["admin", "employee"]),
-    mustHaveFields<IExpense>("cost", "description", "subject"),
+    mustHaveFields<IExpense>("description", "subject"),
     doNotAllowFields<IExpense>("status", "statusUpdatedAt", "statusUpdatedBy"),
     async (req: Request, res: Response) => {
         try {

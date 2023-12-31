@@ -39,7 +39,7 @@ router.get("/sold-books", verifyRole(["admin", "employee"]), async (req: Request
                     as: "book.categories"
                 }
             },
-            { $unwind: "$book.categories" },
+            // { $unwind: "$book.categories" },
             {
                 $lookup: {
                     from: SCHEMA_NAME.INVOICES,
@@ -494,30 +494,27 @@ router.get("/selling", verifyRole(["admin", "employee"]), async (req: Request, r
         const prevMonth = _month - 1 === 0 ? 12 : _month - 1
         const prevYear = _month - 1 === 0 ? _year - 1 : _year
 
-        const currSalary = await InvoiceDetail.aggregate([
+        const currSalary = await Invoice.aggregate([
             {
                 $lookup: {
-                    from: SCHEMA_NAME.INVOICES,
-                    localField: "invoice",
+                    from: SCHEMA_NAME.INVOICE_DETAILS,
+                    localField: "invoiceDetails",
                     foreignField: "_id",
-                    as: "invoice"
+                    as: "invoiceDetails"
                 }
             },
-            { $unwind: "$invoice" },
+            // { $unwind: "$invoice" },
             {
                 $match: {
                     $expr: {
-                        $and: [
-                            { $eq: [{ $month: "$invoice.createdAt" }, _month] },
-                            { $eq: [{ $year: "$invoice.createdAt" }, _year] }
-                        ]
+                        $and: [{ $eq: [{ $month: "$createdAt" }, _month] }, { $eq: [{ $year: "$createdAt" }, _year] }]
                     }
                 }
             },
             {
                 $group: {
                     _id: null,
-                    current: { $sum: "$invoice.total" }
+                    current: { $sum: "$total" }
                 }
             },
             {
@@ -529,7 +526,7 @@ router.get("/selling", verifyRole(["admin", "employee"]), async (req: Request, r
             }
         ])
 
-        const prevSalary = await InvoiceDetail.aggregate([
+        const prevSalary = await Invoice.aggregate([
             {
                 $match: {
                     $expr: {
@@ -542,17 +539,17 @@ router.get("/selling", verifyRole(["admin", "employee"]), async (req: Request, r
             },
             {
                 $lookup: {
-                    from: SCHEMA_NAME.INVOICES,
-                    localField: "invoice",
+                    from: SCHEMA_NAME.INVOICE_DETAILS,
+                    localField: "invoiceDetails",
                     foreignField: "_id",
-                    as: "invoice"
+                    as: "invoiceDetails"
                 }
             },
-            { $unwind: "$invoice" },
+            // { $unwind: "$invoice" },
             {
                 $group: {
                     _id: null,
-                    prev: { $sum: "$invoice.total" }
+                    prev: { $sum: "$total" }
                 }
             },
             {

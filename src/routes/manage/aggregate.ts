@@ -21,62 +21,103 @@ router.get("/sold-books", verifyRole(["admin", "employee"]), async (req: Request
         const lastNDaysTime = (lastNDays || 7) * 24 * 60 * 60 * 1000
         const lastNMonthsTime = (lastNMonths || 12) * 30 * 24 * 60 * 60 * 1000
 
-        const data = await InvoiceDetail.aggregate([
+        const data = await Invoice.aggregate([
             {
-                $lookup: {
-                    from: SCHEMA_NAME.BOOKS,
-                    localField: "book",
-                    foreignField: "_id",
-                    as: "book"
+                $match: {
+                    createdAt: !lastNMonths
+                        ? {
+                              $gte: new Date(Date.now() - lastNDaysTime)
+                          }
+                        : {
+                              $gte: new Date(Date.now() - lastNMonthsTime)
+                          }
                 }
             },
-            { $unwind: "$book" },
             {
-                $lookup: {
-                    from: SCHEMA_NAME.BOOK_CATEGORIES,
-                    localField: "book.categories",
-                    foreignField: "_id",
-                    as: "book.categories"
+                $project: {
+                    total: 1,
+                    invoiceDetails: 1,
+                    createdAt: 1
                 }
             },
-            // { $unwind: "$book.categories" },
             {
                 $lookup: {
-                    from: SCHEMA_NAME.INVOICES,
-                    localField: "invoice",
+                    from: SCHEMA_NAME.INVOICE_DETAILS,
+                    localField: "invoiceDetails",
                     foreignField: "_id",
-                    as: "invoice",
+                    as: "invoiceDetails",
+                    let: {
+                        qquantity: "$invoiceDetails.quantity"
+                    },
                     pipeline: [
                         {
-                            $match: {
-                                createdAt: !lastNMonths
-                                    ? {
-                                          $gte: new Date(Date.now() - lastNDaysTime)
-                                      }
-                                    : {
-                                          $gte: new Date(Date.now() - lastNMonthsTime)
-                                      }
+                            $project: {
+                                book: 1,
+                                quantity: 1
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: SCHEMA_NAME.BOOKS,
+                                localField: "book",
+                                foreignField: "_id",
+                                as: "book",
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            categories: 1
+                                        }
+                                    }
+                                ]
                             }
                         }
                     ]
                 }
             },
-            { $unwind: "$invoice" },
+            byCount || byCategory
+                ? { $unwind: "$invoiceDetails" }
+                : {
+                      $project: {
+                          quantity: 0
+                      }
+                  },
+            {
+                $lookup: {
+                    from: SCHEMA_NAME.BOOK_CATEGORIES,
+                    localField: "invoiceDetails.book.categories",
+                    foreignField: "_id",
+                    as: "invoiceDetails.book.categories",
+                    pipeline: [
+                        {
+                            $project: {
+                                name: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            byCategory
+                ? { $unwind: "$invoiceDetails.book.categories" }
+                : {
+                      $project: {
+                          quantity: 0
+                      }
+                  },
             {
                 $group: !byCategory
                     ? {
                           _id: lastNMonths
-                              ? { $dateToString: { format: "%Y-%m", date: "$invoice.createdAt" } }
-                              : { $dateToString: { format: "%Y-%m-%d", date: "$invoice.createdAt" } },
+                              ? { $dateToString: { format: "%Y-%m", date: "$createdAt" } }
+                              : { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
                           value: !byCount
                               ? {
-                                    $sum: "$invoice.total"
+                                    $sum: "$total"
                                 }
-                              : { $sum: 1 }
+                              : { $sum: "$invoiceDetails.quantity" }
                       }
                     : {
-                          _id: "$book.categories.name",
-                          value: { $sum: "$quantity" }
+                          _id: "$invoiceDetails.book.categories.name",
+                          value: { $sum: "$invoiceDetails.quantity" }
                       }
             },
             {
